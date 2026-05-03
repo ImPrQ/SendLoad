@@ -368,6 +368,10 @@
                         <button class="pill-btn" data-value="1.4" id="pill-rpe8">8<span class="pill-sub">Very Hard ×1.4</span></button>
                         <button class="pill-btn" data-value="1.6" id="pill-rpe9">9+<span class="pill-sub">Max ×1.6</span></button>
                     </div>
+                    <label style="display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
+                        <input type="checkbox" id="warmup-toggle" style="accent-color: var(--orange-500);">
+                        Includes warm-up sets <span class="optional">(averages RPE ramp from easy)</span>
+                    </label>
                 </div>
 
                 <!-- Power Modifier -->
@@ -483,6 +487,11 @@
             <div class="history-header">
                 <h1>Session History</h1>
                 <div class="history-actions">
+                    <button class="btn-outline" id="btn-import" onclick="document.getElementById('import-file').click()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import JSON
+                    </button>
+                    <input type="file" id="import-file" accept=".json" style="display:none;">
                     <button class="btn-outline" id="btn-export">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                         Export CSV

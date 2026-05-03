@@ -1,0 +1,109 @@
+[
+  {"date":"2026-03-02","name":"Tissue Prep + Easy Climbing","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"","notes":"Overcoming curls","load":36,"neuro":43.2,"metabolic":5.8,"structural":36},
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.4,"power":1.0,"hold":1.2,"grade":"","notes":"Yielding hangs","load":50.4,"neuro":70.6,"metabolic":5.0,"structural":36},
+    {"type":"boulder","moves":8,"angle":1.0,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"6a","notes":"Warmup","load":80,"neuro":80,"metabolic":80,"structural":80},
+    {"type":"boulder","moves":6,"angle":1.2,"rpe":1.2,"power":1.0,"hold":1.0,"grade":"6b+","notes":"","load":86.4,"neuro":103.7,"metabolic":69.1,"structural":72}
+  ],"totalLoad":252.8,"totalNeuro":297.5,"totalMetabolic":159.9,"totalStructural":224,"createdAt":"2026-03-02T18:00:00Z"},
+
+  {"date":"2026-03-05","name":"Wall Crawls + Volume","location":"Biover","climbs":[
+    {"type":"boulder","moves":12,"angle":1.4,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"","notes":"Wall crawl drill","load":168,"neuro":168,"metabolic":120,"structural":120},
+    {"type":"boulder","moves":10,"angle":1.2,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"6a+","notes":"","load":120,"neuro":120,"metabolic":100,"structural":100},
+    {"type":"boulder","moves":6,"angle":1.2,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"6b","notes":"","load":103.7,"neuro":124.4,"metabolic":69.1,"structural":86.4}
+  ],"totalLoad":391.7,"totalNeuro":412.4,"totalMetabolic":289.1,"totalStructural":306.4,"createdAt":"2026-03-05T18:00:00Z"},
+
+  {"date":"2026-03-08","name":"Tissue Prep Heavy","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.4,"power":1.0,"hold":1.2,"grade":"","notes":"Overcoming curls max","load":50.4,"neuro":70.6,"metabolic":5.0,"structural":36},
+    {"type":"fingerboard","moves":4,"angle":1.0,"rpe":1.4,"power":1.0,"hold":1.4,"grade":"","notes":"Yielding hangs heavy","load":78.4,"neuro":109.8,"metabolic":6.7,"structural":56},
+    {"type":"boulder","moves":8,"angle":1.2,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"6a","notes":"Easy volume","load":96,"neuro":96,"metabolic":80,"structural":80},
+    {"type":"boulder","moves":5,"angle":1.4,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"6c","notes":"","load":100.8,"neuro":120.9,"metabolic":50.4,"structural":84}
+  ],"totalLoad":325.6,"totalNeuro":397.3,"totalMetabolic":142.1,"totalStructural":256,"createdAt":"2026-03-08T18:00:00Z"},
+
+  {"date":"2026-03-11","name":"Low Velocity Session","location":"Stordeur","climbs":[
+    {"type":"boulder","moves":15,"angle":1.2,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"","notes":"Wall crawls long","load":180,"neuro":180,"metabolic":150,"structural":150},
+    {"type":"boulder","moves":8,"angle":1.0,"rpe":1.0,"power":1.0,"hold":1.2,"grade":"6a+","notes":"","load":96,"neuro":105.2,"metabolic":80,"structural":96},
+    {"type":"boulder","moves":5,"angle":1.2,"rpe":1.2,"power":1.0,"hold":1.0,"grade":"6b","notes":"","load":72,"neuro":86.4,"metabolic":57.6,"structural":60}
+  ],"totalLoad":348,"totalNeuro":371.6,"totalMetabolic":287.6,"totalStructural":306,"createdAt":"2026-03-11T18:00:00Z"},
+
+  {"date":"2026-03-14","name":"FB + Moderate Climbing","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.4,"power":1.0,"hold":1.2,"grade":"","notes":"Curls","load":50.4,"neuro":70.6,"metabolic":5.0,"structural":36},
+    {"type":"boulder","moves":6,"angle":1.2,"rpe":1.2,"power":1.0,"hold":1.0,"grade":"6b+","notes":"","load":86.4,"neuro":103.7,"metabolic":69.1,"structural":72},
+    {"type":"boulder","moves":5,"angle":1.4,"rpe":1.2,"power":1.2,"hold":1.2,"grade":"6c","notes":"","load":120.9,"neuro":145.1,"metabolic":50.4,"structural":100.8}
+  ],"totalLoad":257.7,"totalNeuro":319.4,"totalMetabolic":124.5,"totalStructural":208.8,"createdAt":"2026-03-14T18:00:00Z"},
+
+  {"date":"2026-03-18","name":"Tissue Prep Week 3","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":4,"angle":1.0,"rpe":1.4,"power":1.0,"hold":1.4,"grade":"","notes":"Heavy yields","load":78.4,"neuro":109.8,"metabolic":6.7,"structural":56},
+    {"type":"boulder","moves":12,"angle":1.2,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"","notes":"Wall crawls","load":144,"neuro":144,"metabolic":120,"structural":120},
+    {"type":"boulder","moves":6,"angle":1.4,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"6c","notes":"Felt strong","load":120.9,"neuro":145.1,"metabolic":60.5,"structural":100.8}
+  ],"totalLoad":343.3,"totalNeuro":398.9,"totalMetabolic":187.2,"totalStructural":276.8,"createdAt":"2026-03-18T18:00:00Z"},
+
+  {"date":"2026-03-22","name":"Transition Session","location":"Stordeur","climbs":[
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"","notes":"Overcoming only","load":36,"neuro":43.2,"metabolic":5.8,"structural":36},
+    {"type":"boulder","moves":5,"angle":1.4,"rpe":1.2,"power":1.2,"hold":1.0,"grade":"6c","notes":"","load":100.8,"neuro":120.9,"metabolic":50.4,"structural":84},
+    {"type":"boulder","moves":4,"angle":1.4,"rpe":1.4,"power":1.4,"hold":1.2,"grade":"6c+","notes":"Dynamic!","load":132.5,"neuro":185.5,"metabolic":33.6,"structural":94.1}
+  ],"totalLoad":269.3,"totalNeuro":349.6,"totalMetabolic":89.8,"totalStructural":214.1,"createdAt":"2026-03-22T18:00:00Z"},
+
+  {"date":"2026-03-25","name":"Power Phase Start","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"","notes":"Quick overcoming prime","load":36,"neuro":43.2,"metabolic":5.8,"structural":36},
+    {"type":"boulder","moves":4,"angle":1.6,"rpe":1.4,"power":1.4,"hold":1.2,"grade":"7a","notes":"First 7a attempt!","load":150.5,"neuro":210.7,"metabolic":38.1,"structural":107.5},
+    {"type":"boulder","moves":3,"angle":1.4,"rpe":1.4,"power":1.6,"hold":1.0,"grade":"6c+","notes":"Dynamic comp style","load":94.1,"neuro":131.7,"metabolic":25.2,"structural":67.2}
+  ],"totalLoad":280.6,"totalNeuro":385.6,"totalMetabolic":69.1,"totalStructural":210.7,"createdAt":"2026-03-25T18:00:00Z"},
+
+  {"date":"2026-03-29","name":"Board Climbing Power","location":"Biover","climbs":[
+    {"type":"boulder","moves":4,"angle":1.6,"rpe":1.4,"power":1.4,"hold":1.0,"grade":"6c+","notes":"Moonboard","load":125.4,"neuro":175.6,"metabolic":38.1,"structural":89.6},
+    {"type":"boulder","moves":3,"angle":1.8,"rpe":1.6,"power":1.6,"hold":1.2,"grade":"7a","notes":"Hard project","load":165.9,"neuro":265.4,"metabolic":20.7,"structural":103.7},
+    {"type":"boulder","moves":5,"angle":1.4,"rpe":1.2,"power":1.4,"hold":1.0,"grade":"6b+","notes":"","load":117.6,"neuro":141.1,"metabolic":58.8,"structural":98}
+  ],"totalLoad":408.9,"totalNeuro":582.1,"totalMetabolic":117.6,"totalStructural":291.3,"createdAt":"2026-03-29T18:00:00Z"},
+
+  {"date":"2026-04-01","name":"Power + Projecting","location":"Stordeur","climbs":[
+    {"type":"boulder","moves":4,"angle":1.6,"rpe":1.6,"power":1.6,"hold":1.2,"grade":"7a","notes":"SENT IT!","load":196.6,"neuro":314.6,"metabolic":24.6,"structural":122.9},
+    {"type":"boulder","moves":3,"angle":1.4,"rpe":1.4,"power":1.4,"hold":1.0,"grade":"6c+","notes":"Flash","load":82.3,"neuro":115.2,"metabolic":25.2,"structural":58.8},
+    {"type":"boulder","moves":5,"angle":1.2,"rpe":1.0,"power":1.2,"hold":1.0,"grade":"6b","notes":"Cooldown","load":72,"neuro":72,"metabolic":60,"structural":72}
+  ],"totalLoad":350.9,"totalNeuro":501.8,"totalMetabolic":109.8,"totalStructural":253.7,"createdAt":"2026-04-01T18:00:00Z"},
+
+  {"date":"2026-04-05","name":"Light Recovery","location":"Biover","climbs":[
+    {"type":"boulder","moves":10,"angle":1.0,"rpe":0.8,"power":1.0,"hold":0.8,"grade":"5c","notes":"Easy traversing","load":64,"neuro":51.2,"metabolic":76.8,"structural":64},
+    {"type":"boulder","moves":6,"angle":1.0,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"6a","notes":"","load":60,"neuro":60,"metabolic":60,"structural":60}
+  ],"totalLoad":124,"totalNeuro":111.2,"totalMetabolic":136.8,"totalStructural":124,"createdAt":"2026-04-05T18:00:00Z"},
+
+  {"date":"2026-04-08","name":"Power Phase Peak","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"","notes":"Overcoming prime","load":36,"neuro":43.2,"metabolic":5.8,"structural":36},
+    {"type":"boulder","moves":3,"angle":1.6,"rpe":1.6,"power":1.6,"hold":1.2,"grade":"7a+","notes":"NEW MAX! 7a+ flashed","load":147.5,"neuro":235.9,"metabolic":18.4,"structural":92.2},
+    {"type":"boulder","moves":5,"angle":1.4,"rpe":1.4,"power":1.4,"hold":1.0,"grade":"7a","notes":"Repeating","load":137.2,"neuro":192.1,"metabolic":42,"structural":98}
+  ],"totalLoad":320.7,"totalNeuro":471.2,"totalMetabolic":66.2,"totalStructural":226.2,"createdAt":"2026-04-08T18:00:00Z"},
+
+  {"date":"2026-04-12","name":"Endurance Day","location":"Stordeur","climbs":[
+    {"type":"lead","moves":30,"angle":1.0,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"6a+","notes":"Lead warmup","load":120,"neuro":120,"metabolic":120,"structural":120},
+    {"type":"lead","moves":35,"angle":1.2,"rpe":1.2,"power":1.0,"hold":1.0,"grade":"6c","notes":"Project lead","load":201.6,"neuro":241.9,"metabolic":134.4,"structural":168},
+    {"type":"boulder","moves":4,"angle":1.0,"rpe":0.8,"power":1.0,"hold":1.0,"grade":"5c","notes":"","load":32,"neuro":25.6,"metabolic":38.4,"structural":40}
+  ],"totalLoad":353.6,"totalNeuro":387.5,"totalMetabolic":292.8,"totalStructural":328,"createdAt":"2026-04-12T18:00:00Z"},
+
+  {"date":"2026-04-15","name":"New Tissue Prep Cycle","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":4,"angle":1.0,"rpe":1.4,"power":1.0,"hold":1.4,"grade":"","notes":"Yielding hangs","load":78.4,"neuro":109.8,"metabolic":6.7,"structural":56},
+    {"type":"boulder","moves":12,"angle":1.2,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"","notes":"Wall crawls","load":144,"neuro":144,"metabolic":120,"structural":120},
+    {"type":"boulder","moves":6,"angle":1.0,"rpe":1.0,"power":1.0,"hold":1.2,"grade":"6a+","notes":"Easy volume","load":72,"neuro":78.9,"metabolic":60,"structural":72}
+  ],"totalLoad":294.4,"totalNeuro":332.7,"totalMetabolic":186.7,"totalStructural":248,"createdAt":"2026-04-15T18:00:00Z"},
+
+  {"date":"2026-04-19","name":"Tissue Prep + Crimps","location":"Biover","climbs":[
+    {"type":"fingerboard","moves":4,"angle":1.0,"rpe":1.4,"power":1.0,"hold":1.4,"grade":"","notes":"Yielding heavy","load":78.4,"neuro":109.8,"metabolic":6.7,"structural":56},
+    {"type":"boulder","moves":10,"angle":1.2,"rpe":1.0,"power":1.0,"hold":1.2,"grade":"6a","notes":"Crimp volume","load":144,"neuro":157.8,"metabolic":100,"structural":144},
+    {"type":"boulder","moves":5,"angle":1.4,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"6c","notes":"","load":100.8,"neuro":120.9,"metabolic":50.4,"structural":84}
+  ],"totalLoad":323.2,"totalNeuro":388.5,"totalMetabolic":157.1,"totalStructural":284,"createdAt":"2026-04-19T18:00:00Z"},
+
+  {"date":"2026-04-22","name":"Transition Power 2","location":"Stordeur","climbs":[
+    {"type":"fingerboard","moves":3,"angle":1.0,"rpe":1.2,"power":1.0,"hold":1.2,"grade":"","notes":"Quick prime","load":36,"neuro":43.2,"metabolic":5.8,"structural":36},
+    {"type":"boulder","moves":4,"angle":1.4,"rpe":1.4,"power":1.4,"hold":1.0,"grade":"6c+","notes":"Board climbing","load":109.8,"neuro":153.7,"metabolic":33.6,"structural":78.4},
+    {"type":"boulder","moves":4,"angle":1.6,"rpe":1.4,"power":1.4,"hold":1.2,"grade":"7a","notes":"Project attempt","load":150.5,"neuro":210.7,"metabolic":38.1,"structural":107.5}
+  ],"totalLoad":296.3,"totalNeuro":407.6,"totalMetabolic":77.5,"totalStructural":221.9,"createdAt":"2026-04-22T18:00:00Z"},
+
+  {"date":"2026-04-26","name":"Power Peak 2","location":"Biover","climbs":[
+    {"type":"boulder","moves":3,"angle":1.6,"rpe":1.6,"power":1.6,"hold":1.0,"grade":"7a","notes":"Flashed","load":122.9,"neuro":196.6,"metabolic":18.4,"structural":76.8},
+    {"type":"boulder","moves":4,"angle":1.8,"rpe":1.6,"power":1.6,"hold":1.2,"grade":"7b","notes":"NEW MAX 7b!!!","load":221.2,"neuro":353.9,"metabolic":27.6,"structural":138.2},
+    {"type":"boulder","moves":3,"angle":1.4,"rpe":1.2,"power":1.4,"hold":1.0,"grade":"6c","notes":"Cooldown","load":70.6,"neuro":84.7,"metabolic":35.3,"structural":58.8}
+  ],"totalLoad":414.7,"totalNeuro":635.2,"totalMetabolic":81.3,"totalStructural":273.8,"createdAt":"2026-04-26T18:00:00Z"},
+
+  {"date":"2026-04-29","name":"Active Recovery","location":"Stordeur","climbs":[
+    {"type":"boulder","moves":12,"angle":1.0,"rpe":0.8,"power":1.0,"hold":0.8,"grade":"5b","notes":"Easy traversing","load":76.8,"neuro":61.4,"metabolic":92.2,"structural":76.8},
+    {"type":"boulder","moves":8,"angle":1.0,"rpe":1.0,"power":1.0,"hold":1.0,"grade":"6a","notes":"Moderate","load":80,"neuro":80,"metabolic":80,"structural":80}
+  ],"totalLoad":156.8,"totalNeuro":141.4,"totalMetabolic":172.2,"totalStructural":156.8,"createdAt":"2026-04-29T18:00:00Z"}
+]

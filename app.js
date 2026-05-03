@@ -1633,16 +1633,16 @@ function getChronicLoadASL() {
     return totalCLU / recentSessions.length;
 }
 
-#session-target-select.addEventListener('change', () => updateTargetUI());
+$('#session-target-select').addEventListener('change', () => updateTargetUI());
 
 window.updateTargetUI = function(currentLoad = null) {
     if (currentLoad === null) {
         currentLoad = currentSessionClimbs.reduce((sum, c) => sum + c.load, 0);
     }
     
-    const select = #session-target-select;
-    const fill = #target-progress-fill;
-    const feedback = #target-feedback;
+    const select = $('#session-target-select');
+    const fill = $('#target-progress-fill');
+    const feedback = $('#target-feedback');
     if (!select || !fill || !feedback) return;
     
     const type = select.value;
@@ -1669,8 +1669,8 @@ window.updateTargetUI = function(currentLoad = null) {
 };
 
 window.checkInterference = function() {
-    const banner = #interference-warning;
-    const textEl = #interference-text;
+    const banner = $('#interference-warning');
+    const textEl = $('#interference-text');
     if (!banner || !textEl) return;
     
     const now = new Date();

@@ -1,4 +1,4 @@
-/* ========================================
+﻿/* ========================================
    SendLoad â€” Climbing Load Tracker
    Application Logic (Firebase Sync)
    ======================================== */
@@ -6,7 +6,7 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
 import { 
   initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  collection, doc, setDoc, deleteDoc, onSnapshot
+  collection, doc, setDoc, deleteDoc, onSnapshot, addDoc
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
@@ -113,7 +113,7 @@ onAuthStateChanged(auth, (user) => {
 // ---- C4HP Climbing Load Calculator ----
 const ANGLE_LABELS = {
     '0.8': 'Slab', '1': 'Vertical', '1.0': 'Vertical',
-    '1.2': '20Â°', '1.4': '30Â°', '1.6': '40Â°', '1.8': '50Â°+'
+    '1.2': '20°', '1.4': '30°', '1.6': '40°', '1.8': '50°+'
 };
 const RPE_LABELS = {
     '0.8': 'RPE 5', '1': 'RPE 6', '1.0': 'RPE 6',
@@ -436,7 +436,7 @@ function renderSessionClimbs() {
 
     list.innerHTML = currentSessionClimbs.map((c, i) => {
         const anglePart = c.type === 'fingerboard' ? '' : `<span class="climb-row-detail-tag">${ANGLE_LABELS[String(c.angle)] || c.angle}</span>`;
-        const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">ðŸ“</span>` : '';
+        const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">📝</span>` : '';
         const chBar = renderChannelMini(c.neuro || 0, c.metabolic || 0, c.structural || 0);
         return `
         <div class="climb-row">
@@ -1265,8 +1265,13 @@ function renderHistory() {
         const date = formatDate(s.date);
         const climbsHtml = s.climbs.map((c, ci) => {
             const anglePart = c.type === 'fingerboard' ? '' : `<span class="climb-row-detail-tag">${ANGLE_LABELS[String(c.angle)] || c.angle}</span>`;
-            const cChBar = renderChannelMini(c.neuro || 0, c.metabolic || 0, c.structural || 0);
-            const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">ðŸ“</span>` : '';
+            let n = c.neuro || 0, m = c.metabolic || 0, st = c.structural || 0;
+            if (n === 0 && m === 0 && st === 0) {
+                const ch = calculateChannels(c.type, c.moves, c.angle || 1, c.rpe || 1, c.power || 1, c.hold || 1);
+                n = ch.neuro; m = ch.metabolic; st = ch.structural;
+            }
+            const cChBar = renderChannelMini(n, m, st);
+            const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">📝</span>` : '';
             return `
             <div class="climb-row">
                 <span class="climb-row-num">${ci + 1}</span>
@@ -1293,7 +1298,7 @@ function renderHistory() {
                 <div class="history-session-header" onclick="toggleHistorySession(${idx})">
                     <span class="history-date">${date}</span>
                     <span class="history-name">${escapeHtml(s.name)}</span>
-                    ${s.location ? `<span class="history-location">ðŸ“ ${escapeHtml(s.location)}</span>` : ''}
+                    ${s.location ? `<span class="history-location">📍 ${escapeHtml(s.location)}</span>` : ''}
                     <div class="history-stats">
                         <div class="history-stat">
                             <div class="history-stat-val">${s.climbs.length}</div>
@@ -1434,6 +1439,9 @@ $('#session-presets').addEventListener('click', (e) => {
         if (preset === 'power') {
             if (!nameInput.value) nameInput.value = 'Power Session';
             applyTemplateToForm('boulder', 6, '1.6', '1.6', '1.2', '1.0');
+        } else if (preset === 'project') {
+            if (!nameInput.value) nameInput.value = 'Projecting';
+            applyTemplateToForm('boulder', 4, '1.6', '1.6', '1.6', '1.2');
         } else if (preset === 'endurance') {
             if (!nameInput.value) nameInput.value = 'Endurance Session';
             applyTemplateToForm('lead', 35, '1.0', '1.2', '1.0', '0.8');

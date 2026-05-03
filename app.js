@@ -143,12 +143,12 @@ function calculateChannels(type, moves, angle, rpe, power, hold) {
 
 // Channel mini-bar HTML helper (reusable everywhere)
 function renderChannelMini(n, m, s) {
-    const total = n + m + s;
-    if (total === 0) return '';
-    const nP = (n / total * 100).toFixed(1);
-    const mP = (m / total * 100).toFixed(1);
-    const sP = (s / total * 100).toFixed(1);
-    return `<div class="channel-bar channel-bar-inline"><div class="ch-seg ch-neuro" style="width:${nP}%"></div><div class="ch-seg ch-meta" style="width:${mP}%"></div><div class="ch-seg ch-struct" style="width:${sP}%"></div></div>`;
+    const maxVal = Math.max(n, m, s, 1);
+    // minimum 10% height so 0 values are still slightly visible, max 100%
+    const nH = Math.max(10, (n / maxVal) * 100).toFixed(0);
+    const mH = Math.max(10, (m / maxVal) * 100).toFixed(0);
+    const sH = Math.max(10, (s / maxVal) * 100).toFixed(0);
+    return `<div class="channel-bar-inline"><div class="ws-bar ch-neuro" style="height:${nH}%"></div><div class="ws-bar ch-meta" style="height:${mH}%"></div><div class="ws-bar ch-struct" style="height:${sH}%"></div></div>`;
 }
 
 // Helper: extract channel totals from a session (handles legacy sessions without channel data)
@@ -775,7 +775,7 @@ function renderWeekStrip() {
     const headerEl = header.querySelector('.week-strip-header h3');
     if (headerEl) {
         const fmt = (d) => `${d.getDate()}/${d.getMonth() + 1}`;
-        const label = weekStripOffset === 0 ? 'This Week' : `${fmt(weekStart)} â€” ${fmt(weekEnd)}`;
+        const label = weekStripOffset === 0 ? 'This Week' : `${fmt(weekStart)} - ${fmt(weekEnd)}`;
         const fwdBtn = weekStripOffset < 0 ? `<button class="ws-nav-btn" onclick="weekStripNav(1)">&#9654;</button>` : '';
         const todayBtn = weekStripOffset !== 0 ? ` <button class="ws-today-btn" onclick="weekStripOffset=0;renderWeekStrip();">Today</button>` : '';
         headerEl.innerHTML = `<button class="ws-nav-btn" onclick="weekStripNav(-1)">&#9664;</button> <span>${label}</span> ${fwdBtn}${todayBtn}`;
@@ -816,7 +816,7 @@ function renderWeekStrip() {
             const sH = Math.max(2, (d.struct / maxChannel) * barH);
             html += `<div class="ws-day${todayClass}"><span class="ws-day-label">${d.label}</span><div class="ws-day-bars"><div class="ws-bar ch-neuro" style="height:${nH}px"></div><div class="ws-bar ch-meta" style="height:${mH}px"></div><div class="ws-bar ch-struct" style="height:${sH}px"></div></div><span class="ws-day-load">${Math.round(d.total)}</span></div>`;
         } else {
-            html += `<div class="ws-day${todayClass}"><span class="ws-day-label">${d.label}</span><div class="ws-day-bars"><div class="ws-day-rest"></div></div><span class="ws-day-load" style="color:var(--text-muted)">â€”</span></div>`;
+            html += `<div class="ws-day${todayClass}"><span class="ws-day-label">${d.label}</span><div class="ws-day-bars"><div class="ws-day-rest"></div></div><span class="ws-day-load" style="color:var(--text-muted)">—</span></div>`;
         }
     });
 
@@ -899,13 +899,16 @@ function renderRecentSessions() {
     }
 
     list.innerHTML = recent.map(s => {
-        const date = formatDate(s.date);
+        const ch = getSessionChannels(s);
         return `
             <div class="session-row" onclick="goToHistory()">
-                <span class="session-row-date">${date}</span>
+                <span class="session-row-date">${formatDate(s.date)}</span>
                 <span class="session-row-name">${escapeHtml(s.name)}</span>
                 <span class="session-row-climbs">${s.climbs.length} climb${s.climbs.length !== 1 ? 's' : ''}</span>
-                <span class="session-row-load">${s.totalLoad.toFixed(0)} CLU</span>
+                <div style="display:flex; align-items:center;">
+                    <span class="session-row-load">${s.totalLoad.toFixed(0)} CLU</span>
+                    ${renderChannelMini(ch.neuro, ch.metabolic, ch.structural)}
+                </div>
             </div>`;
     }).join('');
 }

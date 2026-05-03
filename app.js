@@ -71,7 +71,6 @@ onAuthStateChanged(auth, (user) => {
             } else {
                 deloadWeeks = [];
             }
-            }
             refreshDashboard();
         });
         

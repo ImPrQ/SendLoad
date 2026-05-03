@@ -217,6 +217,8 @@ function switchToView(viewName) {
         $('#log-header-title').textContent = 'Log Climbing Session';
         $('#log-header-subtitle').textContent = 'Add climbs to your session and calculate your total training load.';
         $('#btn-save-label').textContent = 'Save Session';
+        setTimeout(checkInterference, 50);
+        setTimeout(() => updateTargetUI(), 50);
     }
 }
 
@@ -469,6 +471,9 @@ function renderSessionClimbs() {
     card.style.display = 'block';
     const totalLoad = currentSessionClimbs.reduce((s, c) => s + c.load, 0);
     $('#session-total').textContent = totalLoad.toFixed(0);
+
+    if (typeof updateTargetUI === 'function') updateTargetUI(totalLoad);
+    if (typeof checkInterference === 'function') checkInterference();
 
     list.innerHTML = currentSessionClimbs.map((c, i) => {
         const anglePart = c.type === 'fingerboard' ? '' : `<span class="climb-row-detail-tag">${ANGLE_LABELS[String(c.angle)] || c.angle}</span>`;
@@ -1610,3 +1615,126 @@ window.deleteTemplate = async (id) => {
 
 // Initial render handles default views, but Firebase onSnapshot handles allSessions
 updatePreview();
+
+// ==========================================
+// PHASE 4: TARGET ENGINE & INTERFERENCE
+// ==========================================
+
+function getChronicLoadASL() {
+    if (!allSessions || allSessions.length === 0) return 500;
+    const now = new Date();
+    const twentyEightDaysAgo = new Date(now);
+    twentyEightDaysAgo.setDate(now.getDate() - 28);
+    
+    const recentSessions = allSessions.filter(s => new Date(s.date) >= twentyEightDaysAgo);
+    if (recentSessions.length === 0) return 500;
+    
+    const totalCLU = recentSessions.reduce((sum, s) => sum + s.totalLoad, 0);
+    return totalCLU / recentSessions.length;
+}
+
+#session-target-select.addEventListener('change', () => updateTargetUI());
+
+window.updateTargetUI = function(currentLoad = null) {
+    if (currentLoad === null) {
+        currentLoad = currentSessionClimbs.reduce((sum, c) => sum + c.load, 0);
+    }
+    
+    const select = #session-target-select;
+    const fill = #target-progress-fill;
+    const feedback = #target-feedback;
+    if (!select || !fill || !feedback) return;
+    
+    const type = select.value;
+    if (type === '0') {
+        fill.style.width = '0%';
+        feedback.textContent = 'No target';
+        return;
+    }
+    
+    const asl = getChronicLoadASL();
+    let targetLoad = 0;
+    if (type === 'light') targetLoad = asl * 0.5;
+    else if (type === 'moderate') targetLoad = asl * 1.0;
+    else if (type === 'heavy') targetLoad = asl * 1.5;
+    
+    let pct = (currentLoad / targetLoad) * 100;
+    
+    if (pct < 80) fill.style.backgroundColor = 'var(--blue-500)';
+    else if (pct <= 105) fill.style.backgroundColor = 'var(--green-500)'; // Optimal zone
+    else fill.style.backgroundColor = 'var(--red-500)'; // Overshot
+    
+    fill.style.width = Math.min(pct, 100) + '%';
+    feedback.textContent = pct.toFixed(0) + '% of ' + targetLoad.toFixed(0) + ' CLU';
+};
+
+window.checkInterference = function() {
+    const banner = #interference-warning;
+    const textEl = #interference-text;
+    if (!banner || !textEl) return;
+    
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(now);
+    fortyEightHoursAgo.setHours(now.getHours() - 48);
+    
+    const recentSessions = allSessions.filter(s => new Date(s.date) >= fortyEightHoursAgo);
+    
+    let pastMetabolic = 0;
+    let pastNeuro = 0;
+    let pastStructural = 0;
+    let pastTotal = 0;
+    
+    recentSessions.forEach(s => {
+        // Exclude the currently edited session if any
+        if (editingSessionId && s.id === editingSessionId) return;
+        
+        pastTotal += s.totalLoad;
+        s.climbs.forEach(c => {
+            pastMetabolic += (c.metabolic || 0);
+            pastNeuro += (c.neuro || 0);
+            pastStructural += (c.structural || 0);
+        });
+    });
+    
+    let curMetabolic = 0;
+    let curNeuro = 0;
+    let curStructural = 0;
+    let curTotal = 0;
+    
+    currentSessionClimbs.forEach(c => {
+        curMetabolic += (c.metabolic || 0);
+        curNeuro += (c.neuro || 0);
+        curStructural += (c.structural || 0);
+        curTotal += c.load;
+    });
+    
+    const totalMetabolic = pastMetabolic + curMetabolic;
+    const totalNeuro = pastNeuro + curNeuro;
+    const totalStructural = pastStructural + curStructural;
+    const totalLoad48h = pastTotal + curTotal;
+    
+    const asl = getChronicLoadASL();
+    
+    let warning = null;
+    
+    // Rule 1: Neuro-Metabolic Clash
+    // If both are highly accumulated in the 48h window + current session
+    if (totalMetabolic > 250 && totalNeuro > 250) {
+        warning = "Concurrent Training Clash: High metabolic acidosis blunts neurological adaptations. Avoid mixing heavy endurance with max power.";
+    } 
+    // Rule 2: Structural Overload
+    else if (totalStructural > 500) {
+        warning = "Structural Overload: High connective tissue strain detected. Keep structural load light to allow tendon recovery.";
+    }
+    // Rule 3: Overtraining
+    else if (totalLoad48h > asl * 2.0 && curTotal > 0) {
+        warning = "Overtraining Warning: High cumulative load over the last 48 hours. Consider making today a light recovery day.";
+    }
+    
+    if (warning) {
+        textEl.textContent = warning;
+        banner.style.display = 'block';
+    } else {
+        banner.style.display = 'none';
+    }
+};

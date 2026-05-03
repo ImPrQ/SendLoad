@@ -1,4 +1,4 @@
-﻿/* ========================================
+/* ========================================
    SendLoad â€” Climbing Load Tracker
    Application Logic (Firebase Sync)
    ======================================== */
@@ -1437,16 +1437,12 @@ $('#session-presets').addEventListener('click', (e) => {
         const nameInput = $('#session-name');
         
         if (preset === 'power') {
-            if (!nameInput.value) nameInput.value = 'Power Session';
             applyTemplateToForm('boulder', 6, '1.6', '1.6', '1.2', '1.0');
         } else if (preset === 'project') {
-            if (!nameInput.value) nameInput.value = 'Projecting';
             applyTemplateToForm('boulder', 4, '1.6', '1.6', '1.6', '1.2');
         } else if (preset === 'endurance') {
-            if (!nameInput.value) nameInput.value = 'Endurance Session';
             applyTemplateToForm('lead', 35, '1.0', '1.2', '1.0', '0.8');
         } else if (preset === 'fingerboard') {
-            if (!nameInput.value) nameInput.value = 'Fingerboard Routine';
             applyTemplateToForm('fingerboard', 10, '1.0', '1.4', '1.0', '1.5');
         }
     }

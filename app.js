@@ -299,6 +299,7 @@ setupPillGroup('wall-angle-group');
 setupPillGroup('rpe-group');
 setupPillGroup('power-group');
 setupPillGroup('hold-group');
+setupPillGroup('fb-modality-group');
 
 // ---- Stepper ----
 const movesInput = $('#num-moves');

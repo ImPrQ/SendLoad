@@ -732,11 +732,91 @@ function refreshDashboard() {
 
     // Recent sessions
     renderRecentSessions();
+    renderWeekStrip();
 
     // Charts & Pyramids
     drawWeeklyChart();
     drawModifiersChart();
     renderGradePyramids();
+}
+
+// ---- Weekly Calendar Strip ----
+function renderWeekStrip() {
+    const container = $('#week-strip-days');
+    if (!container) return;
+
+    const now = new Date();
+    const todayStr = now.toISOString().split('T')[0];
+
+    // Get Monday of current week
+    const weekStart = new Date(now);
+    weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+    weekStart.setHours(0, 0, 0, 0);
+
+    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const days = [];
+
+    // Collect per-day channel data
+    for (let i = 0; i < 7; i++) {
+        const dayDate = new Date(weekStart);
+        dayDate.setDate(weekStart.getDate() + i);
+        const dateStr = dayDate.toISOString().split('T')[0];
+
+        const daySessions = allSessions.filter(s => s.date === dateStr);
+        let neuro = 0, meta = 0, struct = 0, total = 0;
+        daySessions.forEach(sess => {
+            const ch = getSessionChannels(sess);
+            neuro += ch.neuro;
+            meta += ch.metabolic;
+            struct += ch.structural;
+            total += sess.totalLoad;
+        });
+
+        days.push({
+            label: dayLabels[i],
+            dateStr,
+            isToday: dateStr === todayStr,
+            isFuture: dayDate > now,
+            neuro, meta, struct, total,
+            sessionCount: daySessions.length
+        });
+    }
+
+    // Find max channel value for scaling bars
+    const allChannelVals = days.flatMap(d => [d.neuro, d.meta, d.struct]);
+    const maxChannel = Math.max(1, ...allChannelVals);
+
+    let html = '';
+    days.forEach(d => {
+        const todayClass = d.isToday ? ' today' : '';
+        const barH = 36; // max bar height in px
+
+        if (d.sessionCount > 0) {
+            const nH = Math.max(2, (d.neuro / maxChannel) * barH);
+            const mH = Math.max(2, (d.meta / maxChannel) * barH);
+            const sH = Math.max(2, (d.struct / maxChannel) * barH);
+
+            html += `<div class="ws-day${todayClass}">
+                <span class="ws-day-label">${d.label}</span>
+                <div class="ws-day-bars">
+                    <div class="ws-bar ch-neuro" style="height:${nH}px"></div>
+                    <div class="ws-bar ch-meta" style="height:${mH}px"></div>
+                    <div class="ws-bar ch-struct" style="height:${sH}px"></div>
+                </div>
+                <span class="ws-day-load">${Math.round(d.total)}</span>
+            </div>`;
+        } else {
+            html += `<div class="ws-day${todayClass}">
+                <span class="ws-day-label">${d.label}</span>
+                <div class="ws-day-bars">
+                    <div class="ws-day-rest"></div>
+                </div>
+                <span class="ws-day-load" style="color:var(--text-muted)">—</span>
+            </div>`;
+        }
+    });
+
+    container.innerHTML = html;
 }
 
 // ---- Grade Pyramids ----

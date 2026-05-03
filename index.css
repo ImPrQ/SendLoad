@@ -353,6 +353,115 @@ body::before {
     background: linear-gradient(135deg, #4ade80, #22c55e);
 }
 
+/* Weekly Calendar Strip */
+.week-strip-card {
+    background: var(--bg-card);
+    border-radius: var(--radius-lg);
+    border: 1px solid var(--border-color);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.week-strip-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-md);
+}
+
+.week-strip-header h3 {
+    font-size: 1rem;
+    font-weight: 700;
+}
+
+.week-strip-legend {
+    display: flex;
+    gap: var(--space-md);
+    font-size: 0.72rem;
+    color: var(--text-muted);
+}
+
+.ws-legend {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ws-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.week-strip-days {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+}
+
+.ws-day {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    padding: var(--space-sm) 0;
+    border-radius: var(--radius-sm);
+    transition: all var(--transition-fast);
+    cursor: default;
+}
+
+.ws-day.today {
+    background: rgba(249, 115, 22, 0.06);
+    border: 1px solid rgba(249, 115, 22, 0.2);
+}
+
+.ws-day-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+}
+
+.ws-day.today .ws-day-label {
+    color: var(--orange-400);
+}
+
+.ws-day-bars {
+    display: flex;
+    gap: 2px;
+    align-items: flex-end;
+    height: 40px;
+    width: 100%;
+    justify-content: center;
+}
+
+.ws-bar {
+    width: 6px;
+    min-height: 0;
+    border-radius: 2px;
+    transition: height 0.4s ease;
+}
+
+.ws-bar.ch-neuro { background: linear-gradient(to top, #ef4444, #fb923c); }
+.ws-bar.ch-meta { background: linear-gradient(to top, #3b82f6, #60a5fa); }
+.ws-bar.ch-struct { background: linear-gradient(to top, #22c55e, #4ade80); }
+
+.ws-day-load {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.65rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+}
+
+.ws-day-rest {
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--border-color);
+}
+
 /* Chart Cards */
 .chart-card {
     background: var(--bg-card);

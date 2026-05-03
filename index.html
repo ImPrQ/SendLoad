@@ -241,6 +241,14 @@
 
             <!-- Session Meta -->
             <div class="session-meta-card">
+                <div class="form-group" style="margin-bottom: var(--space-md);">
+                    <label>Session Preset <span class="optional">(Quickly set up your session)</span></label>
+                    <div class="pill-group" id="session-presets">
+                        <button class="pill-btn" data-preset="power">Power</button>
+                        <button class="pill-btn" data-preset="endurance">Endurance</button>
+                        <button class="pill-btn" data-preset="fingerboard">Fingerboard</button>
+                    </div>
+                </div>
                 <div class="form-row">
                     <div class="form-group">
                         <label for="session-date">Date</label>
@@ -263,7 +271,17 @@
 
             <!-- Climb Entry Form -->
             <div class="climb-form-card">
-                <h2 id="climb-form-title">Add a Climb</h2>
+                <div class="template-strip-container" id="template-strip-wrapper" style="display:none;">
+                    <label style="font-size: 0.75rem; margin-bottom: 8px; display: block;">Your Templates</label>
+                    <div class="template-strip" id="template-strip">
+                        <!-- JS injects templates here -->
+                    </div>
+                </div>
+
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); margin-top: var(--space-sm);">
+                    <h2 id="climb-form-title" style="margin:0;">Add a Climb</h2>
+                    <button class="btn-secondary" style="padding: 4px 10px; font-size: 0.75rem;" id="btn-save-template">Save as Template</button>
+                </div>
 
                 <!-- Climb Type Toggle -->
                 <div class="form-group">
@@ -286,7 +304,7 @@
 
                 <!-- Number of Moves -->
                 <div class="form-group">
-                    <label for="num-moves">Number of Moves</label>
+                    <label id="label-num-moves" for="num-moves">Number of Moves</label>
                     <div class="stepper-input">
                         <button class="stepper-btn" id="moves-minus">−</button>
                         <input type="number" id="num-moves" class="form-input stepper-value" min="1" value="8" placeholder="8">

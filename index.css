@@ -1580,6 +1580,67 @@ input:checked + .slider:before {
     transform: translateX(-50%) translateY(0);
 }
 
+/* ---- Template Strip ---- */
+.template-strip-container {
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.template-strip {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scrollbar-width: thin;
+}
+
+.template-strip::-webkit-scrollbar {
+    height: 4px;
+}
+
+.template-strip::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.template-strip::-webkit-scrollbar-thumb {
+    background-color: var(--border-color);
+    border-radius: 4px;
+}
+
+.template-btn {
+    background: var(--bg-main);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    padding: 6px 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: var(--text-secondary);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all var(--transition-fast);
+}
+
+.template-btn:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.template-btn-delete {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin-left: 6px;
+    padding-left: 6px;
+    border-left: 1px solid var(--border-color);
+    color: var(--red-500);
+    opacity: 0.7;
+    transition: opacity var(--transition-fast);
+}
+
+.template-btn-delete:hover {
+    opacity: 1;
+}
+
 /* ---- Responsive ---- */
 @media (max-width: 900px) {
     .dashboard-grid {

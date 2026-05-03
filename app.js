@@ -36,6 +36,8 @@ let unsubscribeSnapshot = null;
 let unsubscribeSettings = null;
 let deloadWeeks = [];
 let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
+let userTemplates = [];
+let unsubscribeTemplates = null;
 
 // ---- Authentication Observer ----
 onAuthStateChanged(auth, (user) => {
@@ -69,7 +71,18 @@ onAuthStateChanged(auth, (user) => {
             } else {
                 deloadWeeks = [];
             }
+            }
             refreshDashboard();
+        });
+        
+        if (unsubscribeTemplates) unsubscribeTemplates();
+        unsubscribeTemplates = onSnapshot(collection(db, `users/${user.uid}/templates`), (snapshot) => {
+            userTemplates = [];
+            snapshot.forEach((doc) => {
+                userTemplates.push({ id: doc.id, ...doc.data() });
+            });
+            userTemplates.sort((a,b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+            renderTemplates();
         });
         
         
@@ -86,6 +99,10 @@ onAuthStateChanged(auth, (user) => {
         if (unsubscribeSettings) {
             unsubscribeSettings();
             unsubscribeSettings = null;
+        }
+        if (unsubscribeTemplates) {
+            unsubscribeTemplates();
+            unsubscribeTemplates = null;
         }
         
         // Hide Nav and show Login Screen
@@ -228,17 +245,23 @@ function onClimbTypeChange(type) {
     const gradeWrapper = $('#grade-wrapper');
     const previewAngle = $('#preview-angle');
     const previewAngleOp = $('#preview-angle-op');
+    const labelNumMoves = $('#label-num-moves');
 
     if (type === 'fingerboard') {
         wallAngleWrapper.style.display = 'none';
         gradeWrapper.style.display = 'none';
+        if (labelNumMoves) labelNumMoves.textContent = 'Reps / Time Under Tension (s)';
+        // Reset angle to 1 internally for fingerboard
+
+        gradeWrapper.style.display = 'none';
         previewAngle.style.display = 'none';
         previewAngleOp.style.display = 'none';
     } else {
-        wallAngleWrapper.style.display = '';
-        gradeWrapper.style.display = '';
-        previewAngle.style.display = '';
-        previewAngleOp.style.display = '';
+        wallAngleWrapper.style.display = 'block';
+        gradeWrapper.style.display = 'block';
+        if (labelNumMoves) labelNumMoves.textContent = 'Number of Moves';
+        previewAngle.style.display = 'inline';
+        previewAngleOp.style.display = 'inline';
     }
     updatePreview();
 }
@@ -1396,6 +1419,143 @@ window.addEventListener('resize', () => {
         }
     }, 200);
 });
+
+// Initial render handles default views, but Firebase onSnapshot handles allSessions
+});
+
+// ---- Session Presets ----
+$('#session-presets').addEventListener('click', (e) => {
+    if (e.target.classList.contains('pill-btn')) {
+        // Toggle UI
+        $$('#session-presets .pill-btn').forEach(btn => btn.classList.remove('active'));
+        e.target.classList.add('active');
+
+        const preset = e.target.dataset.preset;
+        const nameInput = $('#session-name');
+        
+        if (preset === 'power') {
+            if (!nameInput.value) nameInput.value = 'Power Session';
+            applyTemplateToForm('boulder', 6, '1.6', '1.6', '1.2', '1.0');
+        } else if (preset === 'endurance') {
+            if (!nameInput.value) nameInput.value = 'Endurance Session';
+            applyTemplateToForm('lead', 35, '1.0', '1.2', '1.0', '0.8');
+        } else if (preset === 'fingerboard') {
+            if (!nameInput.value) nameInput.value = 'Fingerboard Routine';
+            applyTemplateToForm('fingerboard', 10, '1.0', '1.4', '1.0', '1.5');
+        }
+    }
+});
+
+// ---- Custom Templates Logic ----
+function applyTemplateToForm(type, moves, angle, rpe, power, hold) {
+    // Discipline
+    $$('#climb-type-toggle .toggle-btn').forEach(btn => btn.classList.remove('active'));
+    const typeBtn = $(`#toggle-${type}`);
+    if (typeBtn) typeBtn.classList.add('active');
+    onClimbTypeChange(type); // Triggers label changes
+
+    // Moves
+    $('#num-moves').value = moves;
+
+    // Angle
+    if (type !== 'fingerboard') {
+        $$('#wall-angle-group .pill-btn').forEach(btn => btn.classList.remove('active'));
+        const angleBtn = $(`#wall-angle-group .pill-btn[data-value="${angle}"]`);
+        if (angleBtn) angleBtn.classList.add('active');
+    }
+
+    // RPE
+    $$('#rpe-group .pill-btn').forEach(btn => btn.classList.remove('active'));
+    const rpeBtn = $(`#rpe-group .pill-btn[data-value="${rpe}"]`);
+    if (rpeBtn) rpeBtn.classList.add('active');
+
+    // Power
+    $$('#power-group .pill-btn').forEach(btn => btn.classList.remove('active'));
+    const pBtn = $(`#power-group .pill-btn[data-value="${power}"]`);
+    if (pBtn) pBtn.classList.add('active');
+
+    // Hold
+    $$('#hold-group .pill-btn').forEach(btn => btn.classList.remove('active'));
+    const hBtn = $(`#hold-group .pill-btn[data-value="${hold}"]`);
+    if (hBtn) hBtn.classList.add('active');
+    
+    updatePreview();
+}
+
+$('#btn-save-template').addEventListener('click', async () => {
+    const name = prompt('Name this template (e.g., C4HP Pulls):');
+    if (!name || !name.trim()) return;
+
+    // Read current form state
+    const type = $('#climb-type-toggle .active').dataset.value;
+    const moves = parseInt($('#num-moves').value) || 8;
+    
+    let angle = "1.0";
+    if (type !== 'fingerboard') {
+        const activeAngle = $('#wall-angle-group .active');
+        if (activeAngle) angle = activeAngle.dataset.value;
+    }
+    
+    const rpe = $('#rpe-group .active').dataset.value;
+    const power = $('#power-group .active').dataset.value;
+    const hold = $('#hold-group .active').dataset.value;
+
+    const template = {
+        name: name.trim(),
+        type, moves, angle, rpe, power, hold,
+        createdAt: new Date().toISOString()
+    };
+
+    try {
+        await addDoc(collection(db, `users/${currentUser.uid}/templates`), template);
+        showToast('Template saved!');
+    } catch (err) {
+        console.error('Error saving template:', err);
+        showToast('Failed to save template.');
+    }
+});
+
+function renderTemplates() {
+    const strip = $('#template-strip');
+    const wrapper = $('#template-strip-wrapper');
+    if (!strip || !wrapper) return;
+
+    if (userTemplates.length === 0) {
+        wrapper.style.display = 'none';
+        return;
+    }
+
+    wrapper.style.display = 'block';
+    strip.innerHTML = userTemplates.map(t => {
+        return `
+            <div class="template-btn-wrapper" style="display:inline-flex; align-items:center; background:var(--bg-main); border:1px solid var(--border-color); border-radius:var(--radius-sm); padding-right:0; overflow:hidden; flex-shrink:0;">
+                <button class="template-btn" style="border:none; border-radius:0; padding:6px 10px;" onclick="applyUserTemplate('${t.id}')">
+                    ${escapeHtml(t.name)}
+                </button>
+                <button class="template-btn-delete" style="background:transparent; border:none; padding:6px; cursor:pointer;" onclick="deleteTemplate('${t.id}')" title="Delete template">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+window.applyUserTemplate = (id) => {
+    const t = userTemplates.find(x => x.id === id);
+    if (!t) return;
+    applyTemplateToForm(t.type, t.moves, t.angle, t.rpe, t.power, t.hold);
+    showToast(`Applied ${t.name}`);
+};
+
+window.deleteTemplate = async (id) => {
+    if (!confirm('Delete this template?')) return;
+    try {
+        await deleteDoc(doc(db, `users/${currentUser.uid}/templates`, id));
+        showToast('Template deleted');
+    } catch (err) {
+        console.error('Error deleting:', err);
+    }
+};
 
 // Initial render handles default views, but Firebase onSnapshot handles allSessions
 updatePreview();

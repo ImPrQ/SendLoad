@@ -41,6 +41,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
                 History
             </button>
+            <button class="nav-tab" data-view="analytics" id="btn-analytics">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg>
+                Analytics
+            </button>
             <button class="nav-tab" id="btn-logout" style="margin-left: auto;" onclick="signOutUser()">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
                 Sign Out
@@ -491,6 +495,69 @@
                     <p>No sessions in your history.</p>
                     <p class="subtle">Your saved sessions will appear here.</p>
                 </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Analytics View -->
+    <main id="view-analytics" class="view">
+        <div class="analytics-container" style="max-width: 1000px; margin: 0 auto; padding-bottom: 80px;">
+            <div class="history-header">
+                <h1>Performance Analytics</h1>
+                <p class="subtitle" style="margin-top: 4px;">C4HP Velocity & Grade Correlator</p>
+            </div>
+
+            <!-- The Velocity Tracker (C4HP) -->
+            <div class="chart-card span-full" style="margin-bottom: var(--space-lg);">
+                <div class="card-header">
+                    <h2>Velocity Transition Tracker</h2>
+                    <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Tracking Tissue Prep (Low Vel) into Power Phase (High Vel)</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="canvas-velocity" width="800" height="280"></canvas>
+                </div>
+            </div>
+
+            <!-- Junk Miles Detector & Correlator -->
+            <div class="pyramids-container" style="display: flex; flex-direction: column; gap: var(--space-lg); margin-bottom: var(--space-lg);">
+                <div class="chart-card span-full">
+                    <div class="card-header">
+                        <h2>Intensity per Move</h2>
+                        <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Total CLU / Total Moves. High means limit bouldering, low means junk miles.</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="canvas-intensity" width="800" height="220"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-card span-full">
+                    <div class="card-header">
+                        <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                            <div>
+                                <h2>Performance Correlator</h2>
+                                <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Max Font Grade Sent over Time</p>
+                            </div>
+                            <select id="analytics-timeframe" class="form-input" style="width: auto; padding: 4px 8px; font-size: 0.8rem;">
+                                <option value="7">Last 7 Days</option>
+                                <option value="14">Last 14 Days</option>
+                                <option value="28">Last 28 Days</option>
+                                <option value="90" selected>Last 90 Days</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="canvas-correlator" width="800" height="280"></canvas>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Insight Box -->
+            <div class="session-meta-card" style="background: rgba(14, 165, 233, 0.1); border: 1px solid var(--blue-500);">
+                <h3 style="color: var(--blue-500); display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px; height:20px;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    C4HP Coach Insight
+                </h3>
+                <p id="analytics-insight-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-main);">Log more sessions to generate advanced insights about your training phases.</p>
             </div>
         </div>
     </main>

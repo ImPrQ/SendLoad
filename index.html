@@ -304,12 +304,34 @@
                 </div>
 
                 <!-- Number of Moves -->
-                <div class="form-group">
+                <div class="form-group" id="moves-wrapper">
                     <label id="label-num-moves" for="num-moves">Number of Moves</label>
                     <div class="stepper-input">
                         <button class="stepper-btn" id="moves-minus">−</button>
                         <input type="number" id="num-moves" class="form-input stepper-value" min="1" value="8" placeholder="8">
                         <button class="stepper-btn" id="moves-plus">+</button>
+                    </div>
+                </div>
+
+                <!-- Volume (Fingerboard) -->
+                <div class="form-group" id="fingerboard-volume-wrapper" style="display:none;">
+                    <div style="display: flex; gap: var(--space-md);">
+                        <div style="flex: 1;">
+                            <label for="fb-reps">Reps <span class="optional">(pulls)</span></label>
+                            <div class="stepper-input">
+                                <button class="stepper-btn" id="fb-reps-minus">−</button>
+                                <input type="number" id="fb-reps" class="form-input stepper-value" min="0" value="0" placeholder="0">
+                                <button class="stepper-btn" id="fb-reps-plus">+</button>
+                            </div>
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="fb-tut">Seconds <span class="optional">(TUT)</span></label>
+                            <div class="stepper-input">
+                                <button class="stepper-btn" id="fb-tut-minus">−</button>
+                                <input type="number" id="fb-tut" class="form-input stepper-value" min="0" value="10" placeholder="10">
+                                <button class="stepper-btn" id="fb-tut-plus">+</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
@@ -339,13 +361,23 @@
                 </div>
 
                 <!-- Power Modifier -->
-                <div class="form-group">
+                <div class="form-group" id="power-wrapper">
                     <label>Power Style</label>
                     <div class="pill-group" id="power-group">
                         <button class="pill-btn active" data-value="1.0" id="pill-static">Static<span class="pill-sub">×1.0</span></button>
                         <button class="pill-btn" data-value="1.2" id="pill-controlled">Controlled<span class="pill-sub">×1.2</span></button>
                         <button class="pill-btn" data-value="1.4" id="pill-less-controlled">Less-Ctrl<span class="pill-sub">×1.4</span></button>
                         <button class="pill-btn" data-value="1.6" id="pill-power">Hands Only<span class="pill-sub">×1.6</span></button>
+                    </div>
+                </div>
+
+                <!-- Fingerboard Modality -->
+                <div class="form-group" id="fb-modality-wrapper" style="display:none;">
+                    <label>Contraction Type</label>
+                    <div class="pill-group" id="fb-modality-group">
+                        <button class="pill-btn active" data-value="1.0" id="pill-fb-overcoming">Overcoming <span class="pill-sub">Pulls ×1.0</span></button>
+                        <button class="pill-btn" data-value="1.2" id="pill-fb-yielding">Yielding <span class="pill-sub">Hangs ×1.2</span></button>
+                        <button class="pill-btn" data-value="1.3" id="pill-fb-rfd">RFD <span class="pill-sub">Explosive ×1.3</span></button>
                     </div>
                 </div>
 

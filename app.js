@@ -244,23 +244,32 @@ function onClimbTypeChange(type) {
     const gradeWrapper = $('#grade-wrapper');
     const previewAngle = $('#preview-angle');
     const previewAngleOp = $('#preview-angle-op');
-    const labelNumMoves = $('#label-num-moves');
+    
+    const movesWrapper = $('#moves-wrapper');
+    const fbVolumeWrapper = $('#fingerboard-volume-wrapper');
+    const powerWrapper = $('#power-wrapper');
+    const fbModalityWrapper = $('#fb-modality-wrapper');
 
     if (type === 'fingerboard') {
-        wallAngleWrapper.style.display = 'none';
-        gradeWrapper.style.display = 'none';
-        if (labelNumMoves) labelNumMoves.textContent = 'Reps / Time Under Tension (s)';
-        // Reset angle to 1 internally for fingerboard
-
-        gradeWrapper.style.display = 'none';
-        previewAngle.style.display = 'none';
-        previewAngleOp.style.display = 'none';
+        if(wallAngleWrapper) wallAngleWrapper.style.display = 'none';
+        if(gradeWrapper) gradeWrapper.style.display = 'none';
+        if(previewAngle) previewAngle.style.display = 'none';
+        if(previewAngleOp) previewAngleOp.style.display = 'none';
+        
+        if(movesWrapper) movesWrapper.style.display = 'none';
+        if(fbVolumeWrapper) fbVolumeWrapper.style.display = 'block';
+        if(powerWrapper) powerWrapper.style.display = 'none';
+        if(fbModalityWrapper) fbModalityWrapper.style.display = 'block';
     } else {
-        wallAngleWrapper.style.display = 'block';
-        gradeWrapper.style.display = 'block';
-        if (labelNumMoves) labelNumMoves.textContent = 'Number of Moves';
-        previewAngle.style.display = 'inline';
-        previewAngleOp.style.display = 'inline';
+        if(wallAngleWrapper) wallAngleWrapper.style.display = 'block';
+        if(gradeWrapper) gradeWrapper.style.display = 'block';
+        if(previewAngle) previewAngle.style.display = 'inline';
+        if(previewAngleOp) previewAngleOp.style.display = 'inline';
+        
+        if(movesWrapper) movesWrapper.style.display = 'block';
+        if(fbVolumeWrapper) fbVolumeWrapper.style.display = 'none';
+        if(powerWrapper) powerWrapper.style.display = 'block';
+        if(fbModalityWrapper) fbModalityWrapper.style.display = 'none';
     }
     updatePreview();
 }
@@ -293,20 +302,46 @@ setupPillGroup('hold-group');
 
 // ---- Stepper ----
 const movesInput = $('#num-moves');
+const fbRepsInput = $('#fb-reps');
+const fbTutInput = $('#fb-tut');
 
-$('#moves-minus').addEventListener('click', () => {
-    const v = parseInt(movesInput.value) || 1;
-    movesInput.value = Math.max(1, v - 1);
-    updatePreview();
-});
+function bindStepper(minusId, plusId, inputEl, minVal) {
+    const minBtn = $(`#${minusId}`);
+    const plusBtn = $(`#${plusId}`);
+    if (!minBtn || !plusBtn || !inputEl) return;
+    
+    minBtn.addEventListener('click', () => {
+        const v = parseInt(inputEl.value) || 0;
+        inputEl.value = Math.max(minVal, v - 1);
+        updatePreview();
+    });
+    plusBtn.addEventListener('click', () => {
+        const v = parseInt(inputEl.value) || 0;
+        inputEl.value = v + 1;
+        updatePreview();
+    });
+    inputEl.addEventListener('input', updatePreview);
+}
 
-$('#moves-plus').addEventListener('click', () => {
-    const v = parseInt(movesInput.value) || 0;
-    movesInput.value = v + 1;
-    updatePreview();
-});
+bindStepper('moves-minus', 'moves-plus', movesInput, 1);
+bindStepper('fb-reps-minus', 'fb-reps-plus', fbRepsInput, 0);
+bindStepper('fb-tut-minus', 'fb-tut-plus', fbTutInput, 0);
 
-movesInput.addEventListener('input', updatePreview);
+function getEffectiveMoves() {
+    if (currentClimbType === 'fingerboard') {
+        const r = parseInt(fbRepsInput.value) || 0;
+        const t = parseInt(fbTutInput.value) || 0;
+        return Math.max(0.1, r + (t / 3)); // Avoid 0 moves
+    }
+    return parseInt(movesInput.value) || 0;
+}
+
+function getEffectivePower() {
+    if (currentClimbType === 'fingerboard') {
+        return getActivePillValue('fb-modality-group');
+    }
+    return getActivePillValue('power-group');
+}
 
 // ---- Live Preview ----
 function getActivePillValue(groupId) {
@@ -315,16 +350,16 @@ function getActivePillValue(groupId) {
 }
 
 function updatePreview() {
-    const moves = parseInt(movesInput.value) || 0;
+    const moves = getEffectiveMoves();
     const angle = getActivePillValue('wall-angle-group');
     const rpe = getActivePillValue('rpe-group');
-    const power = getActivePillValue('power-group');
+    const power = getEffectivePower();
     const hold = getActivePillValue('hold-group');
 
     const baseMoves = currentClimbType === 'lead' ? moves * 4 : moves * 10;
     const total = calculateLoad(currentClimbType, moves, angle, rpe, power, hold);
 
-    $('#preview-base').textContent = baseMoves;
+    $('#preview-base').textContent = baseMoves.toFixed(0);
     if (currentClimbType !== 'fingerboard') {
         $('#preview-angle').textContent = angle.toFixed(1);
     }
@@ -382,15 +417,15 @@ function resetPillGroup(groupId, defaultValue) {
 
 // ---- Add Climb ----
 $('#btn-add-climb').addEventListener('click', () => {
-    const moves = parseInt(movesInput.value) || 0;
+    const moves = getEffectiveMoves();
     if (moves <= 0) {
-        showToast('Please enter a valid number of moves.');
+        showToast('Please enter a valid volume (moves, reps, or tut).');
         return;
     }
 
     const angle = getActivePillValue('wall-angle-group');
     const rpe = getActivePillValue('rpe-group');
-    const power = getActivePillValue('power-group');
+    const power = getEffectivePower();
     const hold = getActivePillValue('hold-group');
     const grade = currentClimbType === 'fingerboard' ? '' : $('#climb-grade').value.trim();
     const notes = $('#climb-notes').value.trim();
@@ -1443,21 +1478,26 @@ $('#session-presets').addEventListener('click', (e) => {
         } else if (preset === 'endurance') {
             applyTemplateToForm('lead', 35, '1.0', '1.2', '1.0', '0.8');
         } else if (preset === 'fingerboard') {
-            applyTemplateToForm('fingerboard', 10, '1.0', '1.4', '1.0', '1.5');
+            applyTemplateToForm('fingerboard', 0, '1.0', '1.4', '1.2', '1.6', 0, 30);
         }
     }
 });
 
 // ---- Custom Templates Logic ----
-function applyTemplateToForm(type, moves, angle, rpe, power, hold) {
+function applyTemplateToForm(type, moves, angle, rpe, power, hold, reps = 0, tut = 0) {
     // Discipline
     $$('#climb-type-toggle .toggle-btn').forEach(btn => btn.classList.remove('active'));
     const typeBtn = $(`#toggle-${type}`);
     if (typeBtn) typeBtn.classList.add('active');
     onClimbTypeChange(type); // Triggers label changes
 
-    // Moves
-    $('#num-moves').value = moves;
+    // Moves / Volume
+    if (type === 'fingerboard') {
+        $('#fb-reps').value = reps;
+        $('#fb-tut').value = tut;
+    } else {
+        $('#num-moves').value = moves;
+    }
 
     // Angle
     if (type !== 'fingerboard') {
@@ -1472,9 +1512,15 @@ function applyTemplateToForm(type, moves, angle, rpe, power, hold) {
     if (rpeBtn) rpeBtn.classList.add('active');
 
     // Power
-    $$('#power-group .pill-btn').forEach(btn => btn.classList.remove('active'));
-    const pBtn = $(`#power-group .pill-btn[data-value="${power}"]`);
-    if (pBtn) pBtn.classList.add('active');
+    if (type === 'fingerboard') {
+        $$('#fb-modality-group .pill-btn').forEach(btn => btn.classList.remove('active'));
+        const fbPBtn = $(`#fb-modality-group .pill-btn[data-value="${power}"]`);
+        if (fbPBtn) fbPBtn.classList.add('active');
+    } else {
+        $$('#power-group .pill-btn').forEach(btn => btn.classList.remove('active'));
+        const pBtn = $(`#power-group .pill-btn[data-value="${power}"]`);
+        if (pBtn) pBtn.classList.add('active');
+    }
 
     // Hold
     $$('#hold-group .pill-btn').forEach(btn => btn.classList.remove('active'));
@@ -1490,7 +1536,9 @@ $('#btn-save-template').addEventListener('click', async () => {
 
     // Read current form state
     const type = $('#climb-type-toggle .active').dataset.value;
-    const moves = parseInt($('#num-moves').value) || 8;
+    const moves = getEffectiveMoves();
+    const reps = parseInt($('#fb-reps').value) || 0;
+    const tut = parseInt($('#fb-tut').value) || 0;
     
     let angle = "1.0";
     if (type !== 'fingerboard') {
@@ -1499,12 +1547,12 @@ $('#btn-save-template').addEventListener('click', async () => {
     }
     
     const rpe = $('#rpe-group .active').dataset.value;
-    const power = $('#power-group .active').dataset.value;
+    const power = type === 'fingerboard' ? $('#fb-modality-group .active').dataset.value : $('#power-group .active').dataset.value;
     const hold = $('#hold-group .active').dataset.value;
 
     const template = {
         name: name.trim(),
-        type, moves, angle, rpe, power, hold,
+        type, moves, angle, rpe, power, hold, reps, tut,
         createdAt: new Date().toISOString()
     };
 
@@ -1545,7 +1593,7 @@ function renderTemplates() {
 window.applyUserTemplate = (id) => {
     const t = userTemplates.find(x => x.id === id);
     if (!t) return;
-    applyTemplateToForm(t.type, t.moves, t.angle, t.rpe, t.power, t.hold);
+    applyTemplateToForm(t.type, t.moves, t.angle, t.rpe, t.power, t.hold, t.reps || 0, t.tut || 0);
     showToast(`Applied ${t.name}`);
 };
 

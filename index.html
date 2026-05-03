@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>SendLoad — Climbing Load Tracker</title>
+    <meta name="description" content="Track your climbing sessions and calculate training load using the C4HP Climbing Load Index.">
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#fb923c">
+    <link rel="apple-touch-icon" href="data:image/svg+xml;utf8,<svg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><path d='M16 2L4 28h6l2-5h8l2 5h6L16 2zm0 10l3 7h-6l3-7z' fill='%23fb923c'/></svg>">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="index.css">
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav id="main-nav" style="display:none;">
+        <div class="nav-brand">
+            <svg class="nav-logo" viewBox="0 0 32 32" fill="none">
+                <path d="M16 2L4 28h6l2-5h8l2 5h6L16 2zm0 10l3 7h-6l3-7z" fill="url(#logoGrad)"/>
+                <defs>
+                    <linearGradient id="logoGrad" x1="4" y1="2" x2="28" y2="28">
+                        <stop offset="0%" stop-color="#f97316"/>
+                        <stop offset="100%" stop-color="#ef4444"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <span class="nav-title">Send<span class="accent">Load</span></span>
+        </div>
+        <div class="nav-tabs">
+            <button class="nav-tab active" data-view="dashboard" id="btn-dashboard">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+                Dashboard
+            </button>
+            <button class="nav-tab" data-view="log" id="btn-log">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12h14"/></svg>
+                Log Session
+            </button>
+            <button class="nav-tab" data-view="history" id="btn-history">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/></svg>
+                History
+            </button>
+            <button class="nav-tab" id="btn-logout" style="margin-left: auto;" onclick="signOutUser()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                Sign Out
+            </button>
+        </div>
+    </nav>
+
+    <!-- Login View -->
+    <main id="view-login" class="view active">
+        <div class="log-container" style="display:flex; flex-direction:column; align-items:center; justify-content:center; min-height:60vh; text-align:center;">
+            <svg class="nav-logo" viewBox="0 0 32 32" fill="none" style="width:80px; height:80px; margin-bottom:var(--space-md);">
+                <path d="M16 2L4 28h6l2-5h8l2 5h6L16 2zm0 10l3 7h-6l3-7z" fill="url(#logoGradBig)"/>
+                <defs>
+                    <linearGradient id="logoGradBig" x1="4" y1="2" x2="28" y2="28">
+                        <stop offset="0%" stop-color="#f97316"/>
+                        <stop offset="100%" stop-color="#ef4444"/>
+                    </linearGradient>
+                </defs>
+            </svg>
+            <h1 style="font-size: 2.5rem; margin-bottom: var(--space-sm);">Send<span class="accent">Load</span></h1>
+            <p class="subtitle" style="margin-bottom: var(--space-xl);">Track your climbing sessions. Map your load. Send harder.</p>
+            
+            <button class="btn-primary" onclick="signIn()" style="font-size: 1.1rem; padding: 14px 28px;">
+                <svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.748L12.545,10.239z"/></svg>
+                Sign in with Google
+            </button>
+        </div>
+    </main>
+
+    <!-- Dashboard View -->
+    <main id="view-dashboard" class="view">
+        <div id="rest-warning-banner" class="alert-banner" style="display:none;">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:20px; height:20px; flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <span>You've trained hard for 4+ weeks. Consider scheduling a Deload Week!</span>
+        </div>
+
+        <div class="deload-toggle-container" id="deload-container">
+            <div style="flex:1;">
+                <h3>Deload Week</h3>
+                <p class="subtle">Reduce volume to 60% of your chronic load to accelerate recovery.</p>
+                <!-- Energy Budget (Visible only during Deload) -->
+                <div id="deload-budget-container" class="deload-budget" style="display:none;">
+                    <div class="deload-budget-header">
+                        <span>Energy Budget</span>
+                        <span id="deload-budget-text">0 / 0 CLU</span>
+                    </div>
+                    <div class="deload-budget-bar">
+                        <div id="deload-budget-fill" class="deload-budget-fill"></div>
+                    </div>
+                </div>
+            </div>
+            <label class="switch">
+                <input type="checkbox" id="toggle-deload" onchange="window.handleDeloadToggle(this.checked)">
+                <span class="slider"></span>
+            </label>
+        </div>
+
+        <div class="dashboard-grid">
+            <!-- Stats Cards -->
+            <div class="stat-card glow-orange" id="stat-total-load">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">This Week's Load</span>
+                    <span class="stat-value" id="weekly-load">0</span>
+                    <span class="stat-unit">CLU</span>
+                    <div id="channel-breakdown-bar" class="channel-bar" style="display:none;"></div>
+                </div>
+            </div>
+            <div class="stat-card glow-blue" id="stat-sessions">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Sessions This Week</span>
+                    <span class="stat-value" id="weekly-sessions">0</span>
+                    <span class="stat-unit">sessions</span>
+                </div>
+            </div>
+            <div class="stat-card glow-green" id="stat-avg-load">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Avg Load / Session</span>
+                    <span class="stat-value" id="avg-load">0</span>
+                    <span class="stat-unit">CLU</span>
+                </div>
+            </div>
+            <div class="stat-card" id="stat-acwr">
+                <div class="stat-icon" id="stat-icon-acwr">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">ACWR Ratio</span>
+                    <span class="stat-value" id="acwr-ratio">—</span>
+                    <span class="stat-unit" id="acwr-zone" style="font-weight:700">Need Data</span>
+                </div>
+            </div>
+            <div class="stat-card glow-purple" id="stat-trend">
+                <div class="stat-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
+                </div>
+                <div class="stat-content">
+                    <span class="stat-label">Week-over-Week</span>
+                    <span class="stat-value" id="wow-trend">—</span>
+                    <span class="stat-unit" id="wow-unit"></span>
+                </div>
+            </div>
+
+            <!-- Weekly Load Chart -->
+            <div class="chart-card span-full" id="chart-weekly">
+                <div class="card-header">
+                    <h2>Weekly Load Trend</h2>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg, #fb923c, #ef4444)"></span>Neuro</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg, #60a5fa, #3b82f6)"></span>Metabolic</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:linear-gradient(135deg, #4ade80, #22c55e)"></span>Structural</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="canvas-weekly" width="800" height="260"></canvas>
+                </div>
+            </div>
+
+            <!-- Grade Pyramids -->
+            <div class="chart-card span-full" id="card-pyramids">
+                <div class="card-header">
+                    <h2>Grade Pyramid (Last 30 Days)</h2>
+                </div>
+                <div class="pyramids-container">
+                    <div class="pyramid-col">
+                        <h3>Boulder</h3>
+                        <div id="pyramid-boulder" class="pyramid-stack"></div>
+                    </div>
+                    <div class="pyramid-col">
+                        <h3>Lead</h3>
+                        <div id="pyramid-lead" class="pyramid-stack"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Average Modifiers Chart -->
+            <div class="chart-card span-full" id="chart-modifiers">
+                <div class="card-header">
+                    <h2>Average Modifiers (All Sessions)</h2>
+                    <div class="chart-legend">
+                        <span class="legend-item"><span class="legend-dot" style="background:var(--orange-500)"></span>Wall Angle</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:var(--blue-500)"></span>RPE</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:var(--green-500)"></span>Power</span>
+                        <span class="legend-item"><span class="legend-dot" style="background:var(--purple-500)"></span>Hold</span>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="canvas-modifiers" width="800" height="280"></canvas>
+                </div>
+            </div>
+
+            <!-- Recent Sessions -->
+            <div class="chart-card span-full" id="recent-sessions-card">
+                <div class="card-header">
+                    <h2>Recent Sessions</h2>
+                </div>
+                <div id="recent-sessions-list" class="recent-sessions-list">
+                    <div class="empty-state">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                        <p>No sessions recorded yet.</p>
+                        <p class="subtle">Start by logging your first climbing session!</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Log Session View -->
+    <main id="view-log" class="view">
+        <div class="log-container">
+            <div class="log-header">
+                <h1 id="log-header-title">Log Climbing Session</h1>
+                <p class="subtitle" id="log-header-subtitle">Add climbs to your session and calculate your total training load.</p>
+            </div>
+
+            <!-- Session Meta -->
+            <div class="session-meta-card">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="session-date">Date</label>
+                        <input type="date" id="session-date" class="form-input">
+                    </div>
+                    <div class="form-group">
+                        <label for="session-name">Session Name <span class="optional">(optional)</span></label>
+                        <input type="text" id="session-name" class="form-input" placeholder="e.g. Tuesday strength">
+                    </div>
+                    <div class="form-group">
+                        <label for="session-location">Location <span class="optional">(optional)</span></label>
+                        <input type="text" id="session-location" class="form-input" placeholder="e.g. Biover, Stordeur...">
+                    </div>
+                </div>
+                <div class="form-group" style="margin-top: var(--space-md);">
+                    <label for="session-notes">Session Notes <span class="optional">(optional)</span></label>
+                    <textarea id="session-notes" class="form-input form-textarea" placeholder="How did the session feel? Goals, fatigue level, etc."></textarea>
+                </div>
+            </div>
+
+            <!-- Climb Entry Form -->
+            <div class="climb-form-card">
+                <h2 id="climb-form-title">Add a Climb</h2>
+
+                <!-- Climb Type Toggle -->
+                <div class="form-group">
+                    <label>Discipline</label>
+                    <div class="toggle-group" id="climb-type-toggle">
+                        <button class="toggle-btn active" data-value="boulder" id="toggle-boulder">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a7 7 0 0 1 7 7c0 5.25-7 13-7 13S5 14.25 5 9a7 7 0 0 1 7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>
+                            Boulder
+                        </button>
+                        <button class="toggle-btn" data-value="lead" id="toggle-lead">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V7l9-4 9 4v14"/><path d="M9 21V11l4-2 4 2v10"/></svg>
+                            Lead
+                        </button>
+                        <button class="toggle-btn" data-value="fingerboard" id="toggle-fingerboard">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="8" width="20" height="4" rx="1"/><path d="M5 12v4M9 12v3M12 12v4M15 12v3M19 12v4"/></svg>
+                            Fingerboard
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Number of Moves -->
+                <div class="form-group">
+                    <label for="num-moves">Number of Moves</label>
+                    <div class="stepper-input">
+                        <button class="stepper-btn" id="moves-minus">−</button>
+                        <input type="number" id="num-moves" class="form-input stepper-value" min="1" value="15" placeholder="15">
+                        <button class="stepper-btn" id="moves-plus">+</button>
+                    </div>
+                </div>
+
+                <!-- Wall Angle (hidden for fingerboard) -->
+                <div class="form-group" id="wall-angle-wrapper">
+                    <label>Wall Angle</label>
+                    <div class="pill-group" id="wall-angle-group">
+                        <button class="pill-btn" data-value="0.8" id="pill-slab">Slab<span class="pill-sub">×0.8</span></button>
+                        <button class="pill-btn active" data-value="1.0" id="pill-vertical">Vertical<span class="pill-sub">×1.0</span></button>
+                        <button class="pill-btn" data-value="1.2" id="pill-20deg">20°<span class="pill-sub">×1.2</span></button>
+                        <button class="pill-btn" data-value="1.4" id="pill-30deg">30°<span class="pill-sub">×1.4</span></button>
+                        <button class="pill-btn" data-value="1.6" id="pill-40deg">40°<span class="pill-sub">×1.6</span></button>
+                        <button class="pill-btn" data-value="1.8" id="pill-50deg">50°+<span class="pill-sub">×1.8</span></button>
+                    </div>
+                </div>
+
+                <!-- RPE -->
+                <div class="form-group">
+                    <label>Rate of Perceived Exertion (RPE)</label>
+                    <div class="pill-group" id="rpe-group">
+                        <button class="pill-btn" data-value="0.8" id="pill-rpe5">5<span class="pill-sub">Easy ×0.8</span></button>
+                        <button class="pill-btn active" data-value="1.0" id="pill-rpe6">6<span class="pill-sub">Moderate ×1.0</span></button>
+                        <button class="pill-btn" data-value="1.2" id="pill-rpe7">7<span class="pill-sub">Hard ×1.2</span></button>
+                        <button class="pill-btn" data-value="1.4" id="pill-rpe8">8<span class="pill-sub">Very Hard ×1.4</span></button>
+                        <button class="pill-btn" data-value="1.6" id="pill-rpe9">9+<span class="pill-sub">Max ×1.6</span></button>
+                    </div>
+                </div>
+
+                <!-- Power Modifier -->
+                <div class="form-group">
+                    <label>Power Style</label>
+                    <div class="pill-group" id="power-group">
+                        <button class="pill-btn active" data-value="1.0" id="pill-static">Static<span class="pill-sub">×1.0</span></button>
+                        <button class="pill-btn" data-value="1.2" id="pill-controlled">Controlled<span class="pill-sub">×1.2</span></button>
+                        <button class="pill-btn" data-value="1.4" id="pill-less-controlled">Less-Ctrl<span class="pill-sub">×1.4</span></button>
+                        <button class="pill-btn" data-value="1.6" id="pill-power">Hands Only<span class="pill-sub">×1.6</span></button>
+                    </div>
+                </div>
+
+                <!-- Hold Type -->
+                <div class="form-group">
+                    <label>Average Hold Type</label>
+                    <div class="pill-group" id="hold-group">
+                        <button class="pill-btn" data-value="0.8" id="pill-jugs">Jugs<span class="pill-sub">×0.8</span></button>
+                        <button class="pill-btn active" data-value="1.0" id="pill-slopers">Slopers<span class="pill-sub">×1.0</span></button>
+                        <button class="pill-btn" data-value="1.2" id="pill-edges">20-25mm<span class="pill-sub">×1.2</span></button>
+                        <button class="pill-btn" data-value="1.4" id="pill-small-edges">&lt;15mm<span class="pill-sub">×1.4</span></button>
+                        <button class="pill-btn" data-value="1.6" id="pill-pockets">Pockets<span class="pill-sub">×1.6</span></button>
+                    </div>
+                </div>
+
+                <!-- Optional Grade (hidden for fingerboard) -->
+                <div class="form-group" id="grade-wrapper">
+                    <label for="climb-grade">Grade <span class="optional">(optional)</span></label>
+                    <input type="text" id="climb-grade" class="form-input" placeholder="e.g. 7a, V5...">
+                </div>
+
+                <!-- Optional Climb Notes -->
+                <div class="form-group">
+                    <label for="climb-notes">Notes <span class="optional">(optional)</span></label>
+                    <input type="text" id="climb-notes" class="form-input" placeholder="e.g. Flashed it, felt strong on crimps...">
+                </div>
+
+                <!-- Live Preview -->
+                <div class="load-preview" id="load-preview">
+                    <div class="preview-formula">
+                        <span class="formula-part" id="preview-base">150</span>
+                        <span class="formula-op" id="preview-angle-op">×</span>
+                        <span class="formula-part" id="preview-angle">1.0</span>
+                        <span class="formula-op">×</span>
+                        <span class="formula-part" id="preview-rpe">1.0</span>
+                        <span class="formula-op">×</span>
+                        <span class="formula-part" id="preview-power">1.0</span>
+                        <span class="formula-op">×</span>
+                        <span class="formula-part" id="preview-hold">1.0</span>
+                        <span class="formula-eq">=</span>
+                    </div>
+                    <div class="preview-result">
+                        <span class="preview-value" id="preview-total">150</span>
+                        <span class="preview-unit">CLU</span>
+                    </div>
+                </div>
+
+                <button class="btn-primary" id="btn-add-climb">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    Add Climb to Session
+                </button>
+            </div>
+
+            <!-- Session Climbs List -->
+            <div class="session-climbs-card" id="session-climbs-card" style="display:none;">
+                <div class="card-header">
+                    <h2>Session Climbs</h2>
+                    <div class="session-total">
+                        Total: <span class="session-total-value" id="session-total">0</span> CLU
+                    </div>
+                </div>
+                <div id="session-climbs-list" class="session-climbs-list"></div>
+                <button class="btn-save" id="btn-save-session">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+                    <span id="btn-save-label">Save Session</span>
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <!-- History View -->
+    <main id="view-history" class="view">
+        <div class="history-container">
+            <div class="history-header">
+                <h1>Session History</h1>
+                <div class="history-actions">
+                    <button class="btn-outline" id="btn-export">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export CSV
+                    </button>
+                </div>
+            </div>
+            <div id="history-list" class="history-list">
+                <div class="empty-state">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
+                    <p>No sessions in your history.</p>
+                    <p class="subtle">Your saved sessions will appear here.</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Toast Notification -->
+    <div id="toast" class="toast">
+        <span id="toast-message"></span>
+    </div>
+
+    <script type="module" src="app.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('./sw.js').then(registration => {
+            console.log('SW registered: ', registration);
+          }).catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+        });
+      }
+    </script>
+</body>
+</html>

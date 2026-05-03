@@ -1,0 +1,21 @@
+{
+  "name": "SendLoad Tracker",
+  "short_name": "SendLoad",
+  "description": "C4HP Climbing Load Tracker",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0d0d12",
+  "theme_color": "#fb923c",
+  "icons": [
+    {
+      "src": "data:image/svg+xml;utf8,<svg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><path d='M16 2L4 28h6l2-5h8l2 5h6L16 2zm0 10l3 7h-6l3-7z' fill='%23fb923c'/></svg>",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "data:image/svg+xml;utf8,<svg viewBox='0 0 32 32' xmlns='http://www.w3.org/2000/svg'><path d='M16 2L4 28h6l2-5h8l2 5h6L16 2zm0 10l3 7h-6l3-7z' fill='%23fb923c'/></svg>",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    }
+  ]
+}

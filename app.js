@@ -1421,7 +1421,6 @@ window.addEventListener('resize', () => {
 });
 
 // Initial render handles default views, but Firebase onSnapshot handles allSessions
-});
 
 // ---- Session Presets ----
 $('#session-presets').addEventListener('click', (e) => {

@@ -645,7 +645,7 @@ function refreshDashboard() {
 
     const weeklyLoad = thisWeekSessions.reduce((s, sess) => s + sess.totalLoad, 0);
     const lastWeekLoad = lastWeekSessions.reduce((s, sess) => s + sess.totalLoad, 0);
-    const avgLoad = thisWeekSessions.length > 0 ? weeklyLoad / thisWeekSessions.length : 0;
+    const avgLoad = getChronicLoadASL();
 
     // Compute weekly channel totals (with legacy session fallback)
     let weekNeuro = 0, weekMeta = 0, weekStruct = 0;
@@ -1621,13 +1621,13 @@ updatePreview();
 // ==========================================
 
 function getChronicLoadASL() {
-    if (!allSessions || allSessions.length === 0) return 500;
+    if (!allSessions || allSessions.length === 0) return 0;
     const now = new Date();
     const twentyEightDaysAgo = new Date(now);
     twentyEightDaysAgo.setDate(now.getDate() - 28);
     
     const recentSessions = allSessions.filter(s => new Date(s.date) >= twentyEightDaysAgo);
-    if (recentSessions.length === 0) return 500;
+    if (recentSessions.length === 0) return 0;
     
     const totalCLU = recentSessions.reduce((sum, s) => sum + s.totalLoad, 0);
     return totalCLU / recentSessions.length;
@@ -1652,7 +1652,7 @@ window.updateTargetUI = function(currentLoad = null) {
         return;
     }
     
-    const asl = getChronicLoadASL();
+    const asl = getChronicLoadASL() || 500;
     let targetLoad = 0;
     if (type === 'light') targetLoad = asl * 0.5;
     else if (type === 'moderate') targetLoad = asl * 1.0;
@@ -1713,7 +1713,7 @@ window.checkInterference = function() {
     const totalStructural = pastStructural + curStructural;
     const totalLoad48h = pastTotal + curTotal;
     
-    const asl = getChronicLoadASL();
+    const asl = getChronicLoadASL() || 500;
     
     let warning = null;
     

@@ -1,4 +1,4 @@
-const CACHE_NAME = 'sendload-cache-v16';
+const CACHE_NAME = 'sendload-cache-v17';
 const urlsToCache = [
   './',
   './index.html',

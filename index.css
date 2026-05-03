@@ -462,6 +462,59 @@ body::before {
     background: var(--border-color);
 }
 
+/* Week Strip Navigation */
+.ws-nav-btn {
+    background: none;
+    border: 1px solid var(--border-color);
+    color: var(--text-secondary);
+    width: 28px;
+    height: 28px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.7rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: all var(--transition-fast);
+    vertical-align: middle;
+}
+
+.ws-nav-btn:hover {
+    background: var(--border-color);
+    color: var(--text-primary);
+}
+
+.ws-today-btn {
+    background: rgba(249, 115, 22, 0.1);
+    border: 1px solid rgba(249, 115, 22, 0.3);
+    color: var(--orange-400);
+    padding: 4px 10px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-weight: 600;
+    transition: all var(--transition-fast);
+    vertical-align: middle;
+    margin-left: 4px;
+}
+
+.ws-today-btn:hover {
+    background: rgba(249, 115, 22, 0.2);
+}
+
+.week-strip-header h3 {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Inline Channel Bar (used in climb rows, history headers) */
+.channel-bar-inline {
+    width: 100%;
+    height: 4px;
+    margin-top: 4px;
+}
+
 /* Chart Cards */
 .chart-card {
     background: var(--bg-card);

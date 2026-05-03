@@ -1,5 +1,5 @@
 /* ========================================
-   SendLoad — Climbing Load Tracker
+   SendLoad â€” Climbing Load Tracker
    Application Logic (Firebase Sync)
    ======================================== */
 
@@ -35,6 +35,7 @@ let currentUser = null;
 let unsubscribeSnapshot = null;
 let unsubscribeSettings = null;
 let deloadWeeks = [];
+let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
 
 // ---- Authentication Observer ----
 onAuthStateChanged(auth, (user) => {
@@ -96,7 +97,7 @@ onAuthStateChanged(auth, (user) => {
 // ---- C4HP Climbing Load Calculator ----
 const ANGLE_LABELS = {
     '0.8': 'Slab', '1': 'Vertical', '1.0': 'Vertical',
-    '1.2': '20°', '1.4': '30°', '1.6': '40°', '1.8': '50°+'
+    '1.2': '20Â°', '1.4': '30Â°', '1.6': '40Â°', '1.8': '50Â°+'
 };
 const RPE_LABELS = {
     '0.8': 'RPE 5', '1': 'RPE 6', '1.0': 'RPE 6',
@@ -112,7 +113,7 @@ const HOLD_LABELS = {
 };
 
 function calculateLoad(type, moves, angle, rpe, power, hold) {
-    // Fingerboard uses boulder multiplier (×10) but no wall angle
+    // Fingerboard uses boulder multiplier (Ã—10) but no wall angle
     const baseMoves = type === 'lead' ? moves * 4 : moves * 10;
     const effectiveAngle = type === 'fingerboard' ? 1.0 : angle;
     const clu = baseMoves * effectiveAngle * rpe;
@@ -138,6 +139,16 @@ function calculateChannels(type, moves, angle, rpe, power, hold) {
         metabolic: Math.round(metabolic * 10) / 10,
         structural: Math.round(structural * 10) / 10
     };
+}
+
+// Channel mini-bar HTML helper (reusable everywhere)
+function renderChannelMini(n, m, s) {
+    const total = n + m + s;
+    if (total === 0) return '';
+    const nP = (n / total * 100).toFixed(1);
+    const mP = (m / total * 100).toFixed(1);
+    const sP = (s / total * 100).toFixed(1);
+    return `<div class="channel-bar channel-bar-inline"><div class="ch-seg ch-neuro" style="width:${nP}%"></div><div class="ch-seg ch-meta" style="width:${mP}%"></div><div class="ch-seg ch-struct" style="width:${sP}%"></div></div>`;
 }
 
 // Helper: extract channel totals from a session (handles legacy sessions without channel data)
@@ -384,7 +395,7 @@ $('#btn-add-climb').addEventListener('click', () => {
     renderSessionClimbs();
     $('#climb-grade').value = '';
     $('#climb-notes').value = '';
-    showToast(`Climb added — ${load.toFixed(0)} CLU`);
+    showToast(`Climb added â€” ${load.toFixed(0)} CLU`);
 });
 
 // ---- Render Session Climbs ----
@@ -403,7 +414,8 @@ function renderSessionClimbs() {
 
     list.innerHTML = currentSessionClimbs.map((c, i) => {
         const anglePart = c.type === 'fingerboard' ? '' : `<span class="climb-row-detail-tag">${ANGLE_LABELS[String(c.angle)] || c.angle}</span>`;
-        const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">📝</span>` : '';
+        const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">ðŸ“</span>` : '';
+        const chBar = renderChannelMini(c.neuro || 0, c.metabolic || 0, c.structural || 0);
         return `
         <div class="climb-row">
             <span class="climb-row-num">${i + 1}</span>
@@ -418,7 +430,8 @@ function renderSessionClimbs() {
             ${c.grade ? `<span class="climb-row-grade">${escapeHtml(c.grade)}</span>` : ''}
             ${notesHtml}
             <span class="climb-row-load">${c.load.toFixed(0)} CLU</span>
-            <button class="climb-row-remove" onclick="removeClimb(${i})" title="Remove">✕</button>
+            ${chBar}
+            <button class="climb-row-remove" onclick="removeClimb(${i})" title="Remove">âœ•</button>
         </div>`;
     }).join('');
 }
@@ -429,6 +442,7 @@ window.editSession = editSession;
 window.deleteSession = deleteSession;
 window.toggleHistorySession = toggleHistorySession;
 window.goToHistory = goToHistory;
+window.weekStripNav = (dir) => { weekStripOffset += dir; renderWeekStrip(); };
 
 window.signIn = async () => {
     try { await signInWithPopup(auth, provider); }
@@ -509,7 +523,7 @@ function editSession(id) {
 
     // Update headers
     $('#log-header-title').textContent = 'Edit Session';
-    $('#log-header-subtitle').textContent = `Editing "${session.name}" — modify climbs and save when done.`;
+    $('#log-header-subtitle').textContent = `Editing "${session.name}" â€” modify climbs and save when done.`;
     $('#btn-save-label').textContent = 'Update Session';
 
     renderSessionClimbs();
@@ -687,7 +701,7 @@ function refreshDashboard() {
             }
         }
     } else {
-        acwrRatio.textContent = '—';
+        acwrRatio.textContent = 'â€”';
         acwrZone.textContent = 'Need Data';
         acwrZone.style.color = 'var(--text-muted)';
     }
@@ -722,10 +736,10 @@ function refreshDashboard() {
         const change = ((weeklyLoad - lastWeekLoad) / lastWeekLoad * 100).toFixed(0);
         const sign = change >= 0 ? '+' : '';
         $('#wow-trend').textContent = `${sign}${change}%`;
-        $('#wow-unit').textContent = change >= 0 ? '↑' : '↓';
+        $('#wow-unit').textContent = change >= 0 ? 'â†‘' : 'â†“';
         $('#wow-trend').style.color = change >= 0 ? 'var(--green-400)' : 'var(--red-500)';
     } else {
-        $('#wow-trend').textContent = '—';
+        $('#wow-trend').textContent = 'â€”';
         $('#wow-unit').textContent = '';
         $('#wow-trend').style.color = '';
     }
@@ -743,20 +757,33 @@ function refreshDashboard() {
 // ---- Weekly Calendar Strip ----
 function renderWeekStrip() {
     const container = $('#week-strip-days');
-    if (!container) return;
+    const header = $('#week-strip');
+    if (!container || !header) return;
 
     const now = new Date();
     const todayStr = now.toISOString().split('T')[0];
 
-    // Get Monday of current week
+    // Get Monday of the target week (offset from current)
     const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+    weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1) + (weekStripOffset * 7));
     weekStart.setHours(0, 0, 0, 0);
+
+    const weekEnd = new Date(weekStart);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+
+    // Update header with date range and nav arrows
+    const headerEl = header.querySelector('.week-strip-header h3');
+    if (headerEl) {
+        const fmt = (d) => `${d.getDate()}/${d.getMonth() + 1}`;
+        const label = weekStripOffset === 0 ? 'This Week' : `${fmt(weekStart)} â€” ${fmt(weekEnd)}`;
+        const fwdBtn = weekStripOffset < 0 ? `<button class="ws-nav-btn" onclick="weekStripNav(1)">&#9654;</button>` : '';
+        const todayBtn = weekStripOffset !== 0 ? ` <button class="ws-today-btn" onclick="weekStripOffset=0;renderWeekStrip();">Today</button>` : '';
+        headerEl.innerHTML = `<button class="ws-nav-btn" onclick="weekStripNav(-1)">&#9664;</button> <span>${label}</span> ${fwdBtn}${todayBtn}`;
+    }
 
     const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
     const days = [];
 
-    // Collect per-day channel data
     for (let i = 0; i < 7; i++) {
         const dayDate = new Date(weekStart);
         dayDate.setDate(weekStart.getDate() + i);
@@ -772,53 +799,29 @@ function renderWeekStrip() {
             total += sess.totalLoad;
         });
 
-        days.push({
-            label: dayLabels[i],
-            dateStr,
-            isToday: dateStr === todayStr,
-            isFuture: dayDate > now,
-            neuro, meta, struct, total,
-            sessionCount: daySessions.length
-        });
+        days.push({ label: dayLabels[i], dateStr, isToday: dateStr === todayStr, neuro, meta, struct, total, sessionCount: daySessions.length });
     }
 
-    // Find max channel value for scaling bars
     const allChannelVals = days.flatMap(d => [d.neuro, d.meta, d.struct]);
     const maxChannel = Math.max(1, ...allChannelVals);
 
     let html = '';
     days.forEach(d => {
         const todayClass = d.isToday ? ' today' : '';
-        const barH = 36; // max bar height in px
+        const barH = 36;
 
         if (d.sessionCount > 0) {
             const nH = Math.max(2, (d.neuro / maxChannel) * barH);
             const mH = Math.max(2, (d.meta / maxChannel) * barH);
             const sH = Math.max(2, (d.struct / maxChannel) * barH);
-
-            html += `<div class="ws-day${todayClass}">
-                <span class="ws-day-label">${d.label}</span>
-                <div class="ws-day-bars">
-                    <div class="ws-bar ch-neuro" style="height:${nH}px"></div>
-                    <div class="ws-bar ch-meta" style="height:${mH}px"></div>
-                    <div class="ws-bar ch-struct" style="height:${sH}px"></div>
-                </div>
-                <span class="ws-day-load">${Math.round(d.total)}</span>
-            </div>`;
+            html += `<div class="ws-day${todayClass}"><span class="ws-day-label">${d.label}</span><div class="ws-day-bars"><div class="ws-bar ch-neuro" style="height:${nH}px"></div><div class="ws-bar ch-meta" style="height:${mH}px"></div><div class="ws-bar ch-struct" style="height:${sH}px"></div></div><span class="ws-day-load">${Math.round(d.total)}</span></div>`;
         } else {
-            html += `<div class="ws-day${todayClass}">
-                <span class="ws-day-label">${d.label}</span>
-                <div class="ws-day-bars">
-                    <div class="ws-day-rest"></div>
-                </div>
-                <span class="ws-day-load" style="color:var(--text-muted)">—</span>
-            </div>`;
+            html += `<div class="ws-day${todayClass}"><span class="ws-day-label">${d.label}</span><div class="ws-day-bars"><div class="ws-day-rest"></div></div><span class="ws-day-load" style="color:var(--text-muted)">â€”</span></div>`;
         }
     });
 
     container.innerHTML = html;
 }
-
 // ---- Grade Pyramids ----
 function renderGradePyramids() {
     const now = new Date();
@@ -1051,7 +1054,7 @@ function drawModifiersChart() {
 
     ctx.clearRect(0, 0, W, H);
 
-    // Get last 8 weeks of data — compute average modifiers per week
+    // Get last 8 weeks of data â€” compute average modifiers per week
     const weeks = [];
     const now = new Date();
     for (let i = 7; i >= 0; i--) {
@@ -1237,7 +1240,8 @@ function renderHistory() {
         const date = formatDate(s.date);
         const climbsHtml = s.climbs.map((c, ci) => {
             const anglePart = c.type === 'fingerboard' ? '' : `<span class="climb-row-detail-tag">${ANGLE_LABELS[String(c.angle)] || c.angle}</span>`;
-            const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">📝</span>` : '';
+            const cChBar = renderChannelMini(c.neuro || 0, c.metabolic || 0, c.structural || 0);
+            const notesHtml = c.notes ? `<span class="climb-row-note" title="${escapeHtml(c.notes)}">ðŸ“</span>` : '';
             return `
             <div class="climb-row">
                 <span class="climb-row-num">${ci + 1}</span>
@@ -1252,17 +1256,19 @@ function renderHistory() {
                 ${c.grade ? `<span class="climb-row-grade">${escapeHtml(c.grade)}</span>` : ''}
                 ${notesHtml}
                 <span class="climb-row-load">${c.load.toFixed(0)} CLU</span>
+                ${cChBar}
             </div>`;
         }).join('');
 
         const sessionNotesHtml = s.notes ? `<div class="history-session-notes"><strong>Notes:</strong> ${escapeHtml(s.notes)}</div>` : '';
+        const ch = getSessionChannels(s);
 
         return `
             <div class="history-session" id="hist-${idx}">
                 <div class="history-session-header" onclick="toggleHistorySession(${idx})">
                     <span class="history-date">${date}</span>
                     <span class="history-name">${escapeHtml(s.name)}</span>
-                    ${s.location ? `<span class="history-location">📍 ${escapeHtml(s.location)}</span>` : ''}
+                    ${s.location ? `<span class="history-location">ðŸ“ ${escapeHtml(s.location)}</span>` : ''}
                     <div class="history-stats">
                         <div class="history-stat">
                             <div class="history-stat-val">${s.climbs.length}</div>
@@ -1273,6 +1279,7 @@ function renderHistory() {
                             <div class="history-stat-label">CLU</div>
                         </div>
                     </div>
+                    ${renderChannelMini(ch.neuro, ch.metabolic, ch.structural)}
                     <svg class="history-session-expand" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
                 <div class="history-session-body" id="hist-body-${idx}">

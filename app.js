@@ -128,6 +128,20 @@ const HOLD_LABELS = {
     '1.2': '20-25mm', '1.4': '<15mm', '1.6': 'Pockets'
 };
 
+// ---- Date Helpers (Local Time) ----
+function formatLocalDate(date) {
+    const yyyy = date.getFullYear();
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const dd = String(date.getDate()).padStart(2, '0');
+    return `${yyyy}-${mm}-${dd}`;
+}
+
+function parseLocalDate(s) {
+    if (!s) return new Date();
+    const [y, m, d] = s.split('-').map(Number);
+    return new Date(y, m - 1, d);
+}
+
 function calculateLoad(type, moves, angle, rpe, power, hold) {
     // Fingerboard uses boulder multiplier (×10) but no wall angle
     const baseMoves = type === 'lead' ? moves * 4 : moves * 10;
@@ -383,11 +397,7 @@ function updatePreview() {
 
 // ---- Set Default Date ----
 function setDefaultDate() {
-    const now = new Date();
-    const yyyy = now.getFullYear();
-    const mm = String(now.getMonth() + 1).padStart(2, '0');
-    const dd = String(now.getDate()).padStart(2, '0');
-    $('#session-date').value = `${yyyy}-${mm}-${dd}`;
+    $('#session-date').value = formatLocalDate(new Date());
 }
 setDefaultDate();
 
@@ -657,9 +667,9 @@ function refreshDashboard() {
     const lastWeekStart = new Date(weekStart);
     lastWeekStart.setDate(lastWeekStart.getDate() - 7);
 
-    const thisWeekSessions = allSessions.filter(s => new Date(s.date) >= weekStart);
+    const thisWeekSessions = allSessions.filter(s => parseLocalDate(s.date) >= weekStart);
     const lastWeekSessions = allSessions.filter(s => {
-        const d = new Date(s.date);
+        const d = parseLocalDate(s.date);
         return d >= lastWeekStart && d < weekStart;
     });
 
@@ -704,7 +714,10 @@ function refreshDashboard() {
     const past28DaysStart = new Date(now);
     past28DaysStart.setDate(now.getDate() - 28);
     past28DaysStart.setHours(0,0,0,0);
-    const last28Sessions = allSessions.filter(s => new Date(s.date) >= past28DaysStart && new Date(s.date) <= now);
+    const last28Sessions = allSessions.filter(s => {
+        const d = parseLocalDate(s.date);
+        return d >= past28DaysStart && d <= now;
+    });
     const chronicTotal = last28Sessions.reduce((s, sess) => s + sess.totalLoad, 0);
     const chronicLoadAvg = chronicTotal / 4;
 
@@ -844,7 +857,7 @@ function renderWeekStrip() {
     if (!container || !header) return;
 
     const now = new Date();
-    const todayStr = now.toISOString().split('T')[0];
+    const todayStr = formatLocalDate(now);
 
     // Get Monday of the target week (offset from current)
     const weekStart = new Date(now);
@@ -870,7 +883,7 @@ function renderWeekStrip() {
     for (let i = 0; i < 7; i++) {
         const dayDate = new Date(weekStart);
         dayDate.setDate(weekStart.getDate() + i);
-        const dateStr = dayDate.toISOString().split('T')[0];
+        const dateStr = formatLocalDate(dayDate);
 
         const daySessions = allSessions.filter(s => s.date === dateStr);
         let neuro = 0, meta = 0, struct = 0, total = 0;
@@ -912,7 +925,7 @@ function renderGradePyramids() {
     past30Start.setDate(now.getDate() - 30);
     past30Start.setHours(0,0,0,0);
 
-    const recentSessions = allSessions.filter(s => new Date(s.date) >= past30Start);
+    const recentSessions = allSessions.filter(s => parseLocalDate(s.date) >= past30Start);
     
     const boulderGrades = {};
     const leadGrades = {};
@@ -1640,7 +1653,7 @@ function getChronicLoadASL() {
     const twentyEightDaysAgo = new Date(now);
     twentyEightDaysAgo.setDate(now.getDate() - 28);
     
-    const recentSessions = allSessions.filter(s => new Date(s.date) >= twentyEightDaysAgo);
+    const recentSessions = allSessions.filter(s => parseLocalDate(s.date) >= twentyEightDaysAgo);
     if (recentSessions.length === 0) return 0;
     
     const totalCLU = recentSessions.reduce((sum, s) => sum + s.totalLoad, 0);
@@ -1803,8 +1816,8 @@ window.renderAnalytics = function() {
     startDate.setHours(0,0,0,0);
     
     const sessions = allSessions
-        .filter(s => new Date(s.date) >= startDate)
-        .sort((a,b) => new Date(a.date) - new Date(b.date));
+        .filter(s => parseLocalDate(s.date) >= startDate)
+        .sort((a,b) => parseLocalDate(a.date) - parseLocalDate(b.date));
         
     drawVelocityChart(sessions, timeframeDays);
     drawIntensityChart(sessions, timeframeDays);
@@ -1849,7 +1862,7 @@ function drawVelocityChart(sessions, days) {
     
     const now = new Date();
     sessions.forEach(sess => {
-        const d = new Date(sess.date);
+        const d = parseLocalDate(sess.date);
         const diffDays = Math.floor((now - d) / (1000 * 60 * 60 * 24));
         let bIdx = numBuckets - 1 - Math.floor(diffDays / 7);
         if (bIdx < 0) bIdx = 0;
@@ -1934,7 +1947,7 @@ function drawIntensityChart(sessions, days) {
         let tMoves = s.climbs.reduce((acc, c) => acc + (c.moves || 0), 0);
         let i = tMoves > 0 ? s.totalLoad / tMoves : 0;
         if (i > maxI) maxI = i;
-        return { date: new Date(s.date), intensity: i };
+        return { date: parseLocalDate(s.date), intensity: i };
     });
 
     const start = new Date(); start.setDate(start.getDate() - days);
@@ -1986,7 +1999,7 @@ function drawCorrelatorChart(sessions, days) {
             if (sc > m) m = sc;
         });
         if (m > maxScore) maxScore = m;
-        return { date: new Date(s.date), score: m };
+        return { date: parseLocalDate(s.date), score: m };
     }).filter(p => p.score > 0);
 
     if (pts.length === 0 || maxScore === 0) {
@@ -2038,7 +2051,7 @@ function updateCoachInsight(sessions) {
     
     let lowVel = 0, highVel = 0, met = 0;
     
-    sessions.filter(s => new Date(s.date) >= fourteenAgo).forEach(s => {
+    sessions.filter(s => parseLocalDate(s.date) >= fourteenAgo).forEach(s => {
         s.climbs.forEach(c => {
             const p = parseFloat(c.power) || 1.0;
             if (p < 1.3) lowVel += c.load;
@@ -2071,7 +2084,7 @@ function updateCoachInsight(sessions) {
     });
     
     if (bestSession && maxScore > 2) {
-        insight += ` You sent your hardest grade (${getFontGradeLabel(maxScore)}) on ${new Date(bestSession.date).toLocaleDateString()}. `;
+        insight += ` You sent your hardest grade (${getFontGradeLabel(maxScore)}) on ${parseLocalDate(bestSession.date).toLocaleDateString()}. `;
     }
     
     textEl.textContent = insight;
@@ -2160,7 +2173,7 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
                 totalNeuro,
                 totalMetabolic,
                 totalStructural,
-                createdAt: sess.createdAt || new Date(sess.date).toISOString()
+                createdAt: sess.createdAt || new Date().toISOString()
             };
             
             const id = sess.id || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + imported);

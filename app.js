@@ -1323,6 +1323,73 @@ function roundedRect(ctx, x, y, w, h, r) {
     ctx.closePath();
 }
 
+// ---- Session Radar Charts ----
+function drawSessionRadar(canvasId, climbs) {
+    const canvas = document.getElementById(canvasId);
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const size = 80;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.scale(dpr, dpr);
+
+    if (!climbs || climbs.length === 0) return;
+
+    // Averages
+    let avgInt = 0, avgVol = 0, avgAng = 0, avgHold = 0;
+    climbs.forEach(c => {
+        avgInt += parseFloat(c.rpe) || 1.0;
+        avgVol += parseFloat(c.moves) || 0;
+        avgAng += parseFloat(c.angle) || 1.0;
+        avgHold += parseFloat(c.hold) || 1.0;
+    });
+    avgInt /= climbs.length;
+    avgVol /= climbs.length;
+    avgAng /= climbs.length;
+    avgHold /= climbs.length;
+
+    // Normalize (0.1 to 1.0 for visibility)
+    // Ranges: Int (0.8-1.6), Vol (1-30), Ang (0.8-1.8), Hold (0.8-1.6)
+    const norm = (val, min, max) => Math.max(0.1, Math.min(1.0, (val - min) / (max - min)));
+    
+    const p = [
+        norm(avgInt, 0.8, 1.6),  // Top: Intensity
+        norm(avgVol, 1, 30),     // Right: Volume
+        norm(avgAng, 0.8, 1.8),  // Bottom: Angle
+        norm(avgHold, 0.8, 1.6)  // Left: Hold Size
+    ];
+
+    const center = size / 2;
+    const maxR = size / 2 - 8;
+
+    ctx.clearRect(0, 0, size, size);
+    
+    // Draw background axes
+    ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(center, center - maxR); ctx.lineTo(center, center + maxR);
+    ctx.moveTo(center - maxR, center); ctx.lineTo(center + maxR, center);
+    ctx.stroke();
+
+    // Draw polygon
+    ctx.beginPath();
+    ctx.moveTo(center, center - p[0] * maxR);
+    ctx.lineTo(center + p[1] * maxR, center);
+    ctx.lineTo(center, center + p[2] * maxR);
+    ctx.lineTo(center - p[3] * maxR, center);
+    ctx.closePath();
+
+    ctx.fillStyle = 'rgba(249, 115, 22, 0.3)';
+    ctx.fill();
+    ctx.strokeStyle = '#f97316';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+}
+
 // ---- History ----
 function renderHistory() {
     const list = $('#history-list');
@@ -1385,6 +1452,7 @@ function renderHistory() {
                             <div class="history-stat-label">CLU</div>
                         </div>
                     </div>
+                    <canvas id="radar-${s.id}" class="session-radar" width="80" height="80" style="margin-left: auto; margin-right: 15px;"></canvas>
                     ${renderChannelMini(ch.neuro, ch.metabolic, ch.structural)}
                     <svg class="history-session-expand" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
                 </div>
@@ -1407,6 +1475,11 @@ function renderHistory() {
             </div>
         `;
     }).join('');
+
+    // Draw Radars
+    allSessions.forEach(s => {
+        drawSessionRadar(`radar-${s.id}`, s.climbs);
+    });
 }
 
 function toggleHistorySession(idx) {

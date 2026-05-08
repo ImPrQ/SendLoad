@@ -37,6 +37,7 @@ let unsubscribeSettings = null;
 let deloadWeeks = [];
 let chronicWindowDays = 28;
 let restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
+let activeWeeklyChannels = { neuro: true, metabolic: true, structural: true };
 let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
 let userTemplates = [];
 let unsubscribeTemplates = null;
@@ -1067,7 +1068,7 @@ function drawWeeklyChart() {
         weekEnd.setDate(weekEnd.getDate() + 7);
 
         const sessionsInWeek = allSessions.filter(s => {
-            const d = new Date(s.date);
+            const d = parseLocalDate(s.date);
             return d >= weekStart && d < weekEnd;
         });
 
@@ -1080,10 +1081,23 @@ function drawWeeklyChart() {
         });
 
         const label = `${weekStart.getDate()}/${weekStart.getMonth() + 1}`;
-        weeks.push({ label, neuro: neuroLoad, metabolic: metaLoad, structural: structLoad, total: neuroLoad + metaLoad + structLoad });
+        weeks.push({ label, neuro: neuroLoad, metabolic: metaLoad, structural: structLoad });
     }
 
-    const maxVal = Math.max(100, ...weeks.map(w => w.total));
+    // Compute stack totals based on active channels only
+    weeks.forEach(w => {
+        w.stackTotal = 0;
+        if (activeWeeklyChannels.neuro) w.stackTotal += w.neuro;
+        if (activeWeeklyChannels.metabolic) w.stackTotal += w.metabolic;
+        if (activeWeeklyChannels.structural) w.stackTotal += w.structural;
+    });
+
+    // Nice rounded Y-axis max
+    const rawMax = Math.max(100, ...weeks.map(w => w.stackTotal));
+    const niceMax = rawMax <= 500 ? Math.ceil(rawMax / 100) * 100
+                  : rawMax <= 2000 ? Math.ceil(rawMax / 500) * 500
+                  : Math.ceil(rawMax / 1000) * 1000;
+
     const chartW = W - padLeft - padRight;
     const chartH = H - padTop - padBottom;
 
@@ -1097,7 +1111,7 @@ function drawWeeklyChart() {
         ctx.lineTo(W - padRight, y);
         ctx.stroke();
 
-        const val = Math.round(maxVal * (1 - i / 4));
+        const val = Math.round(niceMax * (1 - i / 4));
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.font = '11px Inter';
         ctx.textAlign = 'right';
@@ -1105,52 +1119,99 @@ function drawWeeklyChart() {
     }
 
     const barGroupW = chartW / weeks.length;
-    const barW = Math.min(barGroupW * 0.22, 20);
-    const gap = 2;
+    const barW = Math.min(barGroupW * 0.5, 40);
+
+    // Channel rendering order (bottom to top): structural, metabolic, neuro
+    const channelDefs = [
+        { key: 'structural', colors: ['#4ade80', '#22c55e'] },
+        { key: 'metabolic',  colors: ['#60a5fa', '#3b82f6'] },
+        { key: 'neuro',      colors: ['#fb923c', '#ef4444'] }
+    ];
 
     weeks.forEach((w, i) => {
-        const x = padLeft + barGroupW * i + barGroupW / 2;
+        const xCenter = padLeft + barGroupW * i + barGroupW / 2;
+        const bX = xCenter - barW / 2;
+        let yOffset = 0; // accumulates from bottom
 
-        // Neuromuscular bar (orange-red)
-        const nH = (w.neuro / maxVal) * chartH;
-        const nX = x - barW * 1.5 - gap;
-        const nY = padTop + chartH - nH;
-        const nGrad = ctx.createLinearGradient(0, nY, 0, nY + nH);
-        nGrad.addColorStop(0, '#fb923c');
-        nGrad.addColorStop(1, '#ef4444');
-        roundedRect(ctx, nX, nY, barW, nH, 3);
-        ctx.fillStyle = nGrad;
-        ctx.fill();
+        channelDefs.forEach(ch => {
+            if (!activeWeeklyChannels[ch.key]) return;
+            const val = w[ch.key];
+            if (val <= 0) return;
 
-        // Metabolic bar (blue)
-        const mH = (w.metabolic / maxVal) * chartH;
-        const mX = x - barW / 2;
-        const mY = padTop + chartH - mH;
-        const mGrad = ctx.createLinearGradient(0, mY, 0, mY + mH);
-        mGrad.addColorStop(0, '#60a5fa');
-        mGrad.addColorStop(1, '#3b82f6');
-        roundedRect(ctx, mX, mY, barW, mH, 3);
-        ctx.fillStyle = mGrad;
-        ctx.fill();
+            const segH = (val / niceMax) * chartH;
+            const segY = padTop + chartH - yOffset - segH;
 
-        // Structural bar (green)
-        const sH = (w.structural / maxVal) * chartH;
-        const sX = x + barW / 2 + gap;
-        const sY = padTop + chartH - sH;
-        const sGrad = ctx.createLinearGradient(0, sY, 0, sY + sH);
-        sGrad.addColorStop(0, '#4ade80');
-        sGrad.addColorStop(1, '#22c55e');
-        roundedRect(ctx, sX, sY, barW, sH, 3);
-        ctx.fillStyle = sGrad;
-        ctx.fill();
+            const grad = ctx.createLinearGradient(0, segY, 0, segY + segH);
+            grad.addColorStop(0, ch.colors[0]);
+            grad.addColorStop(1, ch.colors[1]);
+
+            // Only round top corners for the topmost segment
+            roundedRect(ctx, bX, segY, barW, segH, yOffset === 0 ? 0 : 0);
+            // Simple rect for stacking, with rounded top on final segment
+            ctx.beginPath();
+            if (yOffset === 0) {
+                // Bottom segment — flat bottom
+                ctx.rect(bX, segY, barW, segH);
+            } else {
+                ctx.rect(bX, segY, barW, segH);
+            }
+            ctx.fillStyle = grad;
+            ctx.fill();
+
+            yOffset += segH;
+        });
+
+        // Rounded top cap on the full stack
+        if (yOffset > 0) {
+            const topY = padTop + chartH - yOffset;
+            ctx.fillStyle = 'rgba(0,0,0,0)'; // transparent
+            // Draw a small rounded overlay at the top
+            const r = Math.min(4, yOffset / 2);
+            ctx.beginPath();
+            ctx.moveTo(bX, topY + r);
+            ctx.quadraticCurveTo(bX, topY, bX + r, topY);
+            ctx.lineTo(bX + barW - r, topY);
+            ctx.quadraticCurveTo(bX + barW, topY, bX + barW, topY + r);
+            ctx.lineTo(bX + barW, topY + r + 2);
+            ctx.lineTo(bX, topY + r + 2);
+            ctx.closePath();
+            // Redraw the top segment's gradient over the corners
+            const topCh = [...channelDefs].reverse().find(c => activeWeeklyChannels[c.key] && w[c.key] > 0);
+            if (topCh) {
+                const grad = ctx.createLinearGradient(0, topY, 0, topY + 10);
+                grad.addColorStop(0, topCh.colors[0]);
+                grad.addColorStop(1, topCh.colors[1]);
+                ctx.fillStyle = grad;
+                ctx.fill();
+            }
+        }
+
+        // Total label above the stack
+        if (w.stackTotal > 0) {
+            ctx.fillStyle = 'rgba(255,255,255,0.5)';
+            ctx.font = 'bold 10px Inter';
+            ctx.textAlign = 'center';
+            const topY = padTop + chartH - yOffset;
+            ctx.fillText(Math.round(w.stackTotal), xCenter, topY - 6);
+        }
 
         // X label
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.font = '11px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText(w.label, x, H - padBottom + 20);
+        ctx.fillText(w.label, xCenter, H - padBottom + 20);
     });
 }
+
+// Interactive legend toggles
+document.querySelectorAll('#chart-weekly .legend-item[data-channel]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const channel = btn.dataset.channel;
+        activeWeeklyChannels[channel] = !activeWeeklyChannels[channel];
+        btn.classList.toggle('active');
+        drawWeeklyChart();
+    });
+});
 
 // ---- Average Modifiers Chart ----
 function drawModifiersChart() {
@@ -1185,7 +1246,7 @@ function drawModifiersChart() {
         weekEnd.setDate(weekEnd.getDate() + 7);
 
         const sessionsInWeek = allSessions.filter(s => {
-            const d = new Date(s.date);
+            const d = parseLocalDate(s.date);
             return d >= weekStart && d < weekEnd;
         });
 
@@ -1214,17 +1275,32 @@ function drawModifiersChart() {
     const chartW = W - padLeft - padRight;
     const chartH = H - padTop - padBottom;
 
-    // Y-axis range: 0.6 to 2.0
-    const yMin = 0.6;
-    const yMax = 2.0;
-    const yRange = yMax - yMin;
+    // Dynamic Y-axis: find actual min/max across all data
+    const allVals = [];
+    weeks.forEach(w => {
+        ['angle', 'rpe', 'power', 'hold'].forEach(k => {
+            if (w[k] !== null) allVals.push(w[k]);
+        });
+    });
+
+    const dataMin = allVals.length > 0 ? Math.min(...allVals) : 0.8;
+    const dataMax = allVals.length > 0 ? Math.max(...allVals) : 1.6;
+    const padding = 0.1;
+    const yMin = Math.floor((dataMin - padding) * 10) / 10;
+    const yMax = Math.ceil((dataMax + padding) * 10) / 10;
+    const yRange = Math.max(0.2, yMax - yMin);
 
     function yPos(val) {
         return padTop + chartH * (1 - (val - yMin) / yRange);
     }
 
-    // Grid lines and Y labels
-    const yTicks = [0.8, 1.0, 1.2, 1.4, 1.6, 1.8];
+    // Grid lines and Y labels — generate ticks dynamically
+    const tickStep = yRange <= 0.5 ? 0.1 : 0.2;
+    const yTicks = [];
+    for (let t = Math.ceil(yMin / tickStep) * tickStep; t <= yMax; t += tickStep) {
+        yTicks.push(Math.round(t * 100) / 100);
+    }
+
     ctx.strokeStyle = 'rgba(255,255,255,0.05)';
     ctx.lineWidth = 1;
     yTicks.forEach(tick => {
@@ -1240,14 +1316,16 @@ function drawModifiersChart() {
         ctx.fillText(tick.toFixed(1), padLeft - 8, y + 4);
     });
 
-    // Reference line at 1.0
-    ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-    ctx.setLineDash([4, 4]);
-    ctx.beginPath();
-    ctx.moveTo(padLeft, yPos(1.0));
-    ctx.lineTo(W - padRight, yPos(1.0));
-    ctx.stroke();
-    ctx.setLineDash([]);
+    // Reference line at 1.0 (if within range)
+    if (yMin < 1.0 && yMax > 1.0) {
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.setLineDash([4, 4]);
+        ctx.beginPath();
+        ctx.moveTo(padLeft, yPos(1.0));
+        ctx.lineTo(W - padRight, yPos(1.0));
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
 
     // X labels
     const stepW = chartW / (weeks.length - 1 || 1);
@@ -1259,7 +1337,7 @@ function drawModifiersChart() {
         ctx.fillText(w.label, x, H - padBottom + 20);
     });
 
-    // Draw lines
+    // Draw lines — NO area fills
     const series = [
         { key: 'angle', color: '#f97316', label: 'Wall Angle' },
         { key: 'rpe', color: '#3b82f6', label: 'RPE' },
@@ -1286,9 +1364,9 @@ function drawModifiersChart() {
             return;
         }
 
-        // Line
+        // Line (thicker, rounded)
         ctx.strokeStyle = s.color;
-        ctx.lineWidth = 2.5;
+        ctx.lineWidth = 3;
         ctx.lineJoin = 'round';
         ctx.lineCap = 'round';
         ctx.beginPath();
@@ -1298,20 +1376,6 @@ function drawModifiersChart() {
         });
         ctx.stroke();
 
-        // Gradient area
-        ctx.fillStyle = s.color;
-        ctx.globalAlpha = 0.06;
-        ctx.beginPath();
-        points.forEach((p, pi) => {
-            if (pi === 0) ctx.moveTo(p.x, p.y);
-            else ctx.lineTo(p.x, p.y);
-        });
-        ctx.lineTo(points[points.length - 1].x, yPos(yMin));
-        ctx.lineTo(points[0].x, yPos(yMin));
-        ctx.closePath();
-        ctx.fill();
-        ctx.globalAlpha = 1;
-
         // Dots
         points.forEach(p => {
             ctx.fillStyle = s.color;
@@ -1319,7 +1383,7 @@ function drawModifiersChart() {
             ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
             ctx.fill();
 
-            // White inner
+            // Inner dot
             ctx.fillStyle = '#16161f';
             ctx.beginPath();
             ctx.arc(p.x, p.y, 2, 0, Math.PI * 2);

@@ -194,18 +194,14 @@
                 </div>
             </div>
 
-            <!-- Intensity Donut -->
-            <div class="chart-card span-full" id="card-intensity-donut">
+            <!-- Polarization Profile Histogram -->
+            <div class="chart-card span-full" id="card-intensity-histogram">
                 <div class="card-header">
-                    <h2>Intensity Footprint (Last 14 Days)</h2>
-                    <div class="chart-legend">
-                        <span class="legend-item"><span class="legend-dot" style="background:var(--red-500)"></span>Limit (>1.3) <span id="leg-limit">0%</span></span>
-                        <span class="legend-item"><span class="legend-dot" style="background:var(--text-muted)"></span>Moderate (1.0-1.3) <span id="leg-mod">0%</span></span>
-                        <span class="legend-item"><span class="legend-dot" style="background:var(--green-400)"></span>Recovery (<1.0) <span id="leg-rec">0%</span></span>
-                    </div>
+                    <h2>Polarization Profile (Last 14 Days)</h2>
+                    <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Total CLU distributed by Intensity Zone</p>
                 </div>
-                <div class="chart-container" style="display: flex; justify-content: center; padding: 20px;">
-                    <canvas id="canvas-intensity-donut" width="200" height="200"></canvas>
+                <div class="chart-container">
+                    <canvas id="canvas-intensity-hist" width="800" height="260"></canvas>
                 </div>
             </div>
 

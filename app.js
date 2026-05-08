@@ -1,5 +1,5 @@
 /* ========================================
-   SendLoad â€” Climbing Load Tracker
+   SendLoad — Climbing Load Tracker
    Application Logic (Firebase Sync)
    ======================================== */
 
@@ -129,7 +129,7 @@ const HOLD_LABELS = {
 };
 
 function calculateLoad(type, moves, angle, rpe, power, hold) {
-    // Fingerboard uses boulder multiplier (Ã—10) but no wall angle
+    // Fingerboard uses boulder multiplier (×10) but no wall angle
     const baseMoves = type === 'lead' ? moves * 4 : moves * 10;
     const effectiveAngle = type === 'fingerboard' ? 1.0 : angle;
     const clu = baseMoves * effectiveAngle * rpe;
@@ -475,7 +475,7 @@ $('#btn-add-climb').addEventListener('click', () => {
     renderSessionClimbs();
     $('#climb-grade').value = '';
     $('#climb-notes').value = '';
-    showToast(`Climb added â€” ${load.toFixed(0)} CLU`);
+    showToast(`Climb added — ${load.toFixed(0)} CLU`);
 });
 
 // ---- Render Session Climbs ----
@@ -514,7 +514,7 @@ function renderSessionClimbs() {
             ${notesHtml}
             <span class="climb-row-load">${c.load.toFixed(0)} CLU</span>
             ${chBar}
-            <button class="climb-row-remove" onclick="removeClimb(${i})" title="Remove">âœ•</button>
+            <button class="climb-row-remove" onclick="removeClimb(${i})" title="Remove">✕</button>
         </div>`;
     }).join('');
 }
@@ -606,7 +606,7 @@ function editSession(id) {
 
     // Update headers
     $('#log-header-title').textContent = 'Edit Session';
-    $('#log-header-subtitle').textContent = `Editing "${session.name}" â€” modify climbs and save when done.`;
+    $('#log-header-subtitle').textContent = `Editing "${session.name}" — modify climbs and save when done.`;
     $('#btn-save-label').textContent = 'Update Session';
 
     renderSessionClimbs();
@@ -784,7 +784,7 @@ function refreshDashboard() {
             }
         }
     } else {
-        acwrRatio.textContent = 'â€”';
+        acwrRatio.textContent = '—';
         acwrZone.textContent = 'Need Data';
         acwrZone.style.color = 'var(--text-muted)';
     }
@@ -819,10 +819,10 @@ function refreshDashboard() {
         const change = ((weeklyLoad - lastWeekLoad) / lastWeekLoad * 100).toFixed(0);
         const sign = change >= 0 ? '+' : '';
         $('#wow-trend').textContent = `${sign}${change}%`;
-        $('#wow-unit').textContent = change >= 0 ? 'â†‘' : 'â†“';
+        $('#wow-unit').textContent = change >= 0 ? '↑' : '↓';
         $('#wow-trend').style.color = change >= 0 ? 'var(--green-400)' : 'var(--red-500)';
     } else {
-        $('#wow-trend').textContent = 'â€”';
+        $('#wow-trend').textContent = '—';
         $('#wow-unit').textContent = '';
         $('#wow-trend').style.color = '';
     }
@@ -1140,7 +1140,7 @@ function drawModifiersChart() {
 
     ctx.clearRect(0, 0, W, H);
 
-    // Get last 8 weeks of data â€” compute average modifiers per week
+    // Get last 8 weeks of data — compute average modifiers per week
     const weeks = [];
     const now = new Date();
     for (let i = 7; i >= 0; i--) {
@@ -1500,7 +1500,7 @@ $('#session-presets').addEventListener('click', (e) => {
 });
 
 // ---- Custom Templates Logic ----
-function applyTemplateToForm(type, moves, angle, rpe, power, hold, reps = 0, tut = 0) {
+function applyTemplateToForm(type, moves, angle, rpe, power, hold, reps = 0, tut = 0, isWarmup = false) {
     // Discipline
     $$('#climb-type-toggle .toggle-btn').forEach(btn => btn.classList.remove('active'));
     const typeBtn = $(`#toggle-${type}`);
@@ -1542,6 +1542,9 @@ function applyTemplateToForm(type, moves, angle, rpe, power, hold, reps = 0, tut
     $$('#hold-group .pill-btn').forEach(btn => btn.classList.remove('active'));
     const hBtn = $(`#hold-group .pill-btn[data-value="${hold}"]`);
     if (hBtn) hBtn.classList.add('active');
+
+    const warmupToggle = $('#warmup-toggle');
+    if (warmupToggle) warmupToggle.checked = isWarmup;
     
     updatePreview();
 }
@@ -1565,10 +1568,11 @@ $('#btn-save-template').addEventListener('click', async () => {
     const rpe = $('#rpe-group .active').dataset.value;
     const power = type === 'fingerboard' ? $('#fb-modality-group .active').dataset.value : $('#power-group .active').dataset.value;
     const hold = $('#hold-group .active').dataset.value;
+    const isWarmup = $('#warmup-toggle') ? $('#warmup-toggle').checked : false;
 
     const template = {
         name: name.trim(),
-        type, moves, angle, rpe, power, hold, reps, tut,
+        type, moves, angle, rpe, power, hold, reps, tut, isWarmup,
         createdAt: new Date().toISOString()
     };
 
@@ -1609,7 +1613,7 @@ function renderTemplates() {
 window.applyUserTemplate = (id) => {
     const t = userTemplates.find(x => x.id === id);
     if (!t) return;
-    applyTemplateToForm(t.type, t.moves, t.angle, t.rpe, t.power, t.hold, t.reps || 0, t.tut || 0);
+    applyTemplateToForm(t.type, t.moves, t.angle, t.rpe, t.power, t.hold, t.reps || 0, t.tut || 0, t.isWarmup || false);
     showToast(`Applied ${t.name}`);
 };
 

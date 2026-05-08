@@ -848,6 +848,7 @@ function refreshDashboard() {
     drawWeeklyChart();
     drawModifiersChart();
     renderGradePyramids();
+    drawIntensityDonut();
 }
 
 // ---- Weekly Calendar Strip ----
@@ -1921,6 +1922,80 @@ function drawVelocityChart(sessions, days) {
     ctx.fillRect(W - 140, 30, 10, 10);
     ctx.fillStyle = 'rgba(255,255,255,0.7)';
     ctx.fillText('High Velocity (Power)', W - 125, 40);
+}
+
+function drawIntensityDonut() {
+    const canvas = document.getElementById('canvas-intensity-donut');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const dpr = window.devicePixelRatio || 1;
+    const size = 200;
+    canvas.width = size * dpr;
+    canvas.height = size * dpr;
+    canvas.style.width = size + 'px';
+    canvas.style.height = size + 'px';
+    ctx.scale(dpr, dpr);
+
+    const now = new Date();
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(now.getDate() - 14);
+
+    let rec = 0, mod = 0, lim = 0;
+    allSessions.forEach(s => {
+        if (parseLocalDate(s.date) >= fourteenDaysAgo) {
+            s.climbs.forEach(c => {
+                const rpe = parseFloat(c.rpe);
+                if (rpe < 1.0) rec += c.load;
+                else if (rpe <= 1.3) mod += c.load;
+                else lim += c.load;
+            });
+        }
+    });
+
+    const total = rec + mod + lim;
+    const updateLeg = (id, val) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = total > 0 ? Math.round((val / total) * 100) + '%' : '0%';
+    };
+    updateLeg('leg-limit', lim);
+    updateLeg('leg-mod', mod);
+    updateLeg('leg-rec', rec);
+
+    ctx.clearRect(0, 0, size, size);
+    if (total === 0) {
+        ctx.fillStyle = 'rgba(255,255,255,0.1)';
+        ctx.beginPath();
+        ctx.arc(size/2, size/2, 80, 0, 2*Math.PI);
+        ctx.fill();
+        return;
+    }
+
+    const center = size / 2;
+    const radius = 80;
+    const thickness = 25;
+    let startAngle = -Math.PI / 2;
+
+    const drawSlice = (val, color) => {
+        if (val <= 0) return;
+        const sliceAngle = (val / total) * 2 * Math.PI;
+        ctx.beginPath();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = thickness;
+        ctx.arc(center, center, radius - thickness/2, startAngle, startAngle + sliceAngle);
+        ctx.stroke();
+        startAngle += sliceAngle;
+    };
+
+    // Use CSS variables for colors if possible, else defaults
+    const red = getComputedStyle(document.documentElement).getPropertyValue('--red-500').trim() || '#ef4444';
+    const muted = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim() || '#94a3b8';
+    const green = getComputedStyle(document.documentElement).getPropertyValue('--green-400').trim() || '#4ade80';
+
+    drawSlice(lim, red);
+    drawSlice(mod, muted);
+    drawSlice(rec, green);
+
+    // Hollow center is already there as we used stroke on arc
 }
 
 function drawIntensityChart(sessions, days) {

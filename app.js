@@ -2058,7 +2058,7 @@ function updateCoachInsight(sessions) {
     }
     
     if (met > (lowVel + highVel) * 0.5) {
-        insight += " Warning: High metabolic load detected. Heavy pump/acidosis will blunt your neuromuscular power gains. Reduce pump if your goal is max bouldering strength.";
+        insight += " Warning: High metabolic load detected. Heavy pump/acidosis will blunt your neurological power gains. Reduce pump if your goal is max bouldering strength.";
     }
     
     // Check correlation
@@ -2077,6 +2077,39 @@ function updateCoachInsight(sessions) {
     textEl.textContent = insight;
 }
 
+
+// ==========================================
+// EXPORT DATA (JSON)
+// ==========================================
+$('#btn-export').addEventListener('click', () => {
+    if (allSessions.length === 0) {
+        showToast('No data to export.');
+        return;
+    }
+
+    const exportData = allSessions.map(s => ({
+        id: s.id,
+        date: s.date,
+        name: s.name,
+        location: s.location || '',
+        notes: s.notes || '',
+        climbs: s.climbs,
+        totalLoad: s.totalLoad,
+        totalNeuro: s.totalNeuro || 0,
+        totalMetabolic: s.totalMetabolic || 0,
+        totalStructural: s.totalStructural || 0,
+        createdAt: s.createdAt
+    }));
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sendload_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('JSON exported!');
+});
 
 // ==========================================
 // IMPORT DATA (JSON)

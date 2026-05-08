@@ -2113,11 +2113,11 @@ function updateReadinessGauges() {
     if (!container) return;
 
     const now = new Date();
-    const fortyEightHoursAgo = new Date(now);
-    fortyEightHoursAgo.setHours(now.getHours() - 48);
-
     const twentyEightDaysAgo = new Date(now);
     twentyEightDaysAgo.setDate(now.getDate() - 28);
+    
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
 
     let chronStruct = 0, chronNeuro = 0, chronMet = 0;
     let acuteStruct = 0, acuteNeuro = 0, acuteMet = 0;
@@ -2126,15 +2126,31 @@ function updateReadinessGauges() {
         const d = parseLocalDate(s.date);
         const ch = getSessionChannels(s);
 
+        // Chronic Capacity (28d)
         if (d >= twentyEightDaysAgo) {
             chronStruct += ch.structural;
             chronNeuro += ch.neuro;
             chronMet += ch.metabolic;
         }
-        if (d >= fortyEightHoursAgo) {
-            acuteStruct += ch.structural;
-            acuteNeuro += ch.neuro;
-            acuteMet += ch.metabolic;
+
+        // Acute Decay (7d)
+        if (d >= sevenDaysAgo) {
+            // Precise time calculation
+            let sessTime;
+            if (s.createdAt) {
+                sessTime = new Date(s.createdAt);
+            } else {
+                // Fallback to midday local time
+                sessTime = parseLocalDate(s.date);
+                sessTime.setHours(12, 0, 0, 0);
+            }
+
+            const diffHours = Math.max(0, (now - sessTime) / (1000 * 3600));
+            
+            // Half-lives: Met (12h), Neuro (24h), Struct (36h)
+            acuteMet += ch.metabolic * Math.pow(0.5, diffHours / 12);
+            acuteNeuro += ch.neuro * Math.pow(0.5, diffHours / 24);
+            acuteStruct += ch.structural * Math.pow(0.5, diffHours / 36);
         }
     });
 

@@ -1114,6 +1114,28 @@ body::before {
     background: var(--bg-card);
 }
 
+.btn-danger-fill {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--red-500);
+    border: none;
+    border-radius: var(--radius-md);
+    color: white;
+    font-family: inherit;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all var(--transition-fast);
+}
+
+.btn-danger-fill:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
 /* Session Climbs List */
 .session-climbs-list {
     display: flex;

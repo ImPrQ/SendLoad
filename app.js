@@ -35,6 +35,8 @@ let currentUser = null;
 let unsubscribeSnapshot = null;
 let unsubscribeSettings = null;
 let deloadWeeks = [];
+let chronicWindowDays = 28;
+let restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
 let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
 let userTemplates = [];
 let unsubscribeTemplates = null;
@@ -67,9 +69,25 @@ onAuthStateChanged(auth, (user) => {
         if (unsubscribeSettings) unsubscribeSettings();
         unsubscribeSettings = onSnapshot(doc(db, `users/${user.uid}/settings`, 'preferences'), (docSnap) => {
             if (docSnap.exists()) {
-                deloadWeeks = docSnap.data().deloadWeeks || [];
+                const data = docSnap.data();
+                deloadWeeks = data.deloadWeeks || [];
+                chronicWindowDays = data.chronicWindowDays || 28;
+                restTimerDefaults = data.restTimerDefaults || { rpe7: 3, rpe8: 5, rpe9: 8 };
+                
+                // Sync UI inputs
+                const winInp = document.getElementById('setting-chronic-window');
+                if (winInp) winInp.value = chronicWindowDays;
+                
+                const r7 = document.getElementById('setting-rest-rpe7');
+                const r8 = document.getElementById('setting-rest-rpe8');
+                const r9 = document.getElementById('setting-rest-rpe9');
+                if (r7) r7.value = restTimerDefaults.rpe7;
+                if (r8) r8.value = restTimerDefaults.rpe8;
+                if (r9) r9.value = restTimerDefaults.rpe9;
             } else {
                 deloadWeeks = [];
+                chronicWindowDays = 28;
+                restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
             }
             refreshDashboard();
         });
@@ -213,7 +231,8 @@ const views = {
     dashboard: $('#view-dashboard'),
     log: $('#view-log'),
     history: $('#view-history'),
-    analytics: $('#view-analytics')
+    analytics: $('#view-analytics'),
+    settings: $('#view-settings')
 };
 
 // ---- Navigation ----
@@ -710,16 +729,16 @@ function refreshDashboard() {
 
     // Acute: past 7 days
     const acuteLoad = thisWeekSessions.reduce((s, sess) => s + sess.totalLoad, 0);
-    // Chronic: past 28 days
-    const past28DaysStart = new Date(now);
-    past28DaysStart.setDate(now.getDate() - 28);
-    past28DaysStart.setHours(0,0,0,0);
-    const last28Sessions = allSessions.filter(s => {
+    // Chronic: past N days (user-configurable)
+    const pastChronicStart = new Date(now);
+    pastChronicStart.setDate(now.getDate() - chronicWindowDays);
+    pastChronicStart.setHours(0,0,0,0);
+    const lastChronicSessions = allSessions.filter(s => {
         const d = parseLocalDate(s.date);
-        return d >= past28DaysStart && d <= now;
+        return d >= pastChronicStart && d <= now;
     });
-    const chronicTotal = last28Sessions.reduce((s, sess) => s + sess.totalLoad, 0);
-    const chronicLoadAvg = chronicTotal / 4;
+    const chronicTotal = lastChronicSessions.reduce((s, sess) => s + sess.totalLoad, 0);
+    const chronicLoadAvg = chronicTotal / (chronicWindowDays / 7);
 
     const acwrCard = $('#stat-acwr');
     const acwrRatio = $('#acwr-ratio');
@@ -1500,36 +1519,6 @@ async function deleteSession(id) {
     }
 }
 
-// ---- Export JSON ----
-$('#btn-export').addEventListener('click', () => {
-    if (allSessions.length === 0) {
-        showToast('No data to export.');
-        return;
-    }
-
-    const exportData = allSessions.map(s => ({
-        id: s.id,
-        date: s.date,
-        name: s.name,
-        location: s.location || '',
-        notes: s.notes || '',
-        climbs: s.climbs,
-        totalLoad: s.totalLoad,
-        totalNeuro: s.totalNeuro || 0,
-        totalMetabolic: s.totalMetabolic || 0,
-        totalStructural: s.totalStructural || 0,
-        createdAt: s.createdAt
-    }));
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sendload_export_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('JSON exported!');
-});
 
 // ---- Utilities ----
 function formatDate(dateStr) {
@@ -1726,14 +1715,14 @@ updatePreview();
 function getChronicLoadASL() {
     if (!allSessions || allSessions.length === 0) return 0;
     const now = new Date();
-    const twentyEightDaysAgo = new Date(now);
-    twentyEightDaysAgo.setDate(now.getDate() - 28);
+    const chronicStart = new Date(now);
+    chronicStart.setDate(now.getDate() - chronicWindowDays);
     
-    const recentSessions = allSessions.filter(s => parseLocalDate(s.date) >= twentyEightDaysAgo);
+    const recentSessions = allSessions.filter(s => parseLocalDate(s.date) >= chronicStart);
     if (recentSessions.length === 0) return 0;
     
     const totalCLU = recentSessions.reduce((sum, s) => sum + s.totalLoad, 0);
-    return totalCLU / recentSessions.length;
+    return totalCLU / (chronicWindowDays / 7); // weekly average
 }
 
 $('#session-target-select').addEventListener('change', () => updateTargetUI());
@@ -2113,8 +2102,8 @@ function updateReadinessGauges() {
     if (!container) return;
 
     const now = new Date();
-    const twentyEightDaysAgo = new Date(now);
-    twentyEightDaysAgo.setDate(now.getDate() - 28);
+    const chronicStart = new Date(now);
+    chronicStart.setDate(now.getDate() - chronicWindowDays);
     
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(now.getDate() - 7);
@@ -2126,8 +2115,8 @@ function updateReadinessGauges() {
         const d = parseLocalDate(s.date);
         const ch = getSessionChannels(s);
 
-        // Chronic Capacity (28d)
-        if (d >= twentyEightDaysAgo) {
+        // Chronic Capacity
+        if (d >= chronicStart) {
             chronStruct += ch.structural;
             chronNeuro += ch.neuro;
             chronMet += ch.metabolic;
@@ -2154,9 +2143,10 @@ function updateReadinessGauges() {
         }
     });
 
-    const wChronStruct = Math.max(1, chronStruct / 4);
-    const wChronNeuro = Math.max(1, chronNeuro / 4);
-    const wChronMet = Math.max(1, chronMet / 4);
+    const weeksInChronic = chronicWindowDays / 7;
+    const wChronStruct = Math.max(1, chronStruct / weeksInChronic);
+    const wChronNeuro = Math.max(1, chronNeuro / weeksInChronic);
+    const wChronMet = Math.max(1, chronMet / weeksInChronic);
 
     const calcReady = (acute, weekly) => Math.max(5, Math.round(100 - Math.min(100, (acute / weekly) * 100)));
 
@@ -2393,39 +2383,6 @@ function updateCoachInsight(sessions) {
 
 
 // ==========================================
-// EXPORT DATA (JSON)
-// ==========================================
-$('#btn-export').addEventListener('click', () => {
-    if (allSessions.length === 0) {
-        showToast('No data to export.');
-        return;
-    }
-
-    const exportData = allSessions.map(s => ({
-        id: s.id,
-        date: s.date,
-        name: s.name,
-        location: s.location || '',
-        notes: s.notes || '',
-        climbs: s.climbs,
-        totalLoad: s.totalLoad,
-        totalNeuro: s.totalNeuro || 0,
-        totalMetabolic: s.totalMetabolic || 0,
-        totalStructural: s.totalStructural || 0,
-        createdAt: s.createdAt
-    }));
-
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `sendload_export_${new Date().toISOString().split('T')[0]}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    showToast('JSON exported!');
-});
-
-// ==========================================
 // IMPORT DATA (JSON)
 // ==========================================
 
@@ -2489,3 +2446,94 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
         showToast('Import failed: ' + err.message);
     }
 });
+
+// ==========================================
+// SETTINGS & PREFERENCES
+// ==========================================
+
+async function updatePreference(key, value) {
+    if (!currentUser) return;
+    try {
+        await setDoc(doc(db, `users/${currentUser.uid}/settings`, 'preferences'), {
+            [key]: value
+        }, { merge: true });
+    } catch (err) {
+        console.error("Error saving preference:", err);
+    }
+}
+
+$('#setting-chronic-window').addEventListener('change', (e) => {
+    const val = parseInt(e.target.value) || 28;
+    updatePreference('chronicWindowDays', val);
+});
+
+['rpe7', 'rpe8', 'rpe9'].forEach(key => {
+    $(`#setting-rest-${key}`).addEventListener('change', (e) => {
+        const val = parseInt(e.target.value) || 5;
+        const newDefaults = { ...restTimerDefaults, [key]: val };
+        updatePreference('restTimerDefaults', newDefaults);
+    });
+});
+
+// Wipe Data
+window.handleWipeData = async function() {
+    if (!currentUser) return;
+    const confirmText = "DELETE ALL DATA";
+    const promptValue = prompt(`This will permanently delete ALL training sessions and settings. This action is IRREVERSIBLE.\n\nPlease type "${confirmText}" to confirm:`);
+    
+    if (promptValue !== confirmText) {
+        showToast("Wipe cancelled.");
+        return;
+    }
+    
+    showToast("Starting wipe...");
+    try {
+        // Delete sessions
+        for (const session of allSessions) {
+            await deleteDoc(doc(db, `users/${currentUser.uid}/sessions`, session.id));
+        }
+        // Delete settings
+        await deleteDoc(doc(db, `users/${currentUser.uid}/settings`, 'preferences'));
+        
+        showToast("All data wiped successfully.");
+        switchToView('dashboard');
+    } catch (err) {
+        console.error("Wipe error:", err);
+        showToast("Error wiping data: " + err.message);
+    }
+}
+
+// Consolidation of Export Logic
+const handleExport = () => {
+    if (allSessions.length === 0) {
+        showToast('No data to export.');
+        return;
+    }
+
+    const exportData = allSessions.map(s => ({
+        id: s.id,
+        date: s.date,
+        name: s.name,
+        location: s.location || '',
+        notes: s.notes || '',
+        climbs: s.climbs,
+        totalLoad: s.totalLoad,
+        totalNeuro: s.totalNeuro,
+        totalMetabolic: s.totalMetabolic,
+        totalStructural: s.totalStructural,
+        createdAt: s.createdAt || new Date().toISOString()
+    }));
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `sendload_export_${new Date().toISOString().split('T')[0]}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast('JSON exported!');
+};
+
+// Bind export to the Settings view button
+const exportBtnSettings = document.getElementById('btn-export-settings');
+if (exportBtnSettings) exportBtnSettings.addEventListener('click', handleExport);

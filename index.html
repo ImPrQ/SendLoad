@@ -45,9 +45,9 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg>
                 Analytics
             </button>
-            <button class="nav-tab" id="btn-logout" style="margin-left: auto;" onclick="signOutUser()">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                Sign Out
+            <button class="nav-tab" data-view="settings" id="btn-settings" style="margin-left: auto;">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+                Settings
             </button>
         </div>
     </nav>
@@ -505,17 +505,6 @@
         <div class="history-container">
             <div class="history-header">
                 <h1>Session History</h1>
-                <div class="history-actions">
-                    <button class="btn-outline" id="btn-import" onclick="document.getElementById('import-file').click()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import JSON
-                    </button>
-                    <input type="file" id="import-file" accept=".json" style="display:none;">
-                    <button class="btn-outline" id="btn-export">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Export JSON
-                    </button>
-                </div>
             </div>
             <div id="history-list" class="history-list">
                 <div class="empty-state">
@@ -586,6 +575,77 @@
                     C4HP Coach Insight
                 </h3>
                 <p id="analytics-insight-text" style="font-size: 0.95rem; line-height: 1.5; color: var(--text-main);">Log more sessions to generate advanced insights about your training phases.</p>
+            </div>
+        </div>
+    </main>
+
+    <!-- Settings View -->
+    <main id="view-settings" class="view">
+        <div class="log-container">
+            <div class="log-header">
+                <h1>Settings & Preferences</h1>
+                <p class="subtitle">Customize your training parameters and manage your data.</p>
+            </div>
+
+            <!-- Preferences -->
+            <div class="session-meta-card">
+                <h2>Training Preferences</h2>
+                <div class="form-group">
+                    <label for="setting-chronic-window">Chronic Load Window (Days)</label>
+                    <input type="number" id="setting-chronic-window" class="form-input" min="7" max="90" value="28">
+                    <p class="subtle">Standard is 28 days. A shorter window makes your chronic capacity more reactive.</p>
+                </div>
+                
+                <div style="margin-top: var(--space-lg);">
+                    <h3 style="font-size: 0.9rem; margin-bottom: var(--space-md); color: var(--text-secondary);">Rest Timer Defaults (Minutes)</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="setting-rest-rpe7">RPE 7</label>
+                            <input type="number" id="setting-rest-rpe7" class="form-input" value="3">
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-rest-rpe8">RPE 8</label>
+                            <input type="number" id="setting-rest-rpe8" class="form-input" value="5">
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-rest-rpe9">RPE 9+</label>
+                            <input type="number" id="setting-rest-rpe9" class="form-input" value="8">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Data Management -->
+            <div class="session-meta-card">
+                <h2>Data Management</h2>
+                <p class="subtle" style="margin-bottom: var(--space-md);">Backup your data or import history from a JSON file.</p>
+                <div style="display: flex; gap: var(--space-md);">
+                    <button class="btn-outline" style="flex:1;" onclick="document.getElementById('import-file').click()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                        Import JSON
+                    </button>
+                    <input type="file" id="import-file" accept=".json" style="display:none;">
+                    <button class="btn-outline" style="flex:1;" id="btn-export-settings">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                        Export JSON
+                    </button>
+                </div>
+            </div>
+
+            <!-- Account & Danger Zone -->
+            <div class="session-meta-card" style="border-color: rgba(239, 68, 68, 0.3);">
+                <h2 style="color: var(--red-500);">Danger Zone</h2>
+                <p class="subtle" style="margin-bottom: var(--space-md);">Manage your account or permanently delete your training history.</p>
+                <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                    <button class="btn-outline" onclick="signOutUser()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                        Sign Out
+                    </button>
+                    <button class="btn-danger-fill" onclick="window.handleWipeData()">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        Wipe All Data (Irreversible)
+                    </button>
+                </div>
             </div>
         </div>
     </main>

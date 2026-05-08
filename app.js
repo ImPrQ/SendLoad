@@ -357,9 +357,16 @@ function getActivePillValue(groupId) {
 function updatePreview() {
     const moves = getEffectiveMoves();
     const angle = getActivePillValue('wall-angle-group');
-    const rpe = getActivePillValue('rpe-group');
+    let rpe = getActivePillValue('rpe-group');
     const power = getEffectivePower();
     const hold = getActivePillValue('hold-group');
+
+    // Warm-up ramp: average RPE from baseline (0.8) to selected RPE
+    const warmupToggle = $('#warmup-toggle');
+    const isWarmup = warmupToggle && warmupToggle.checked;
+    if (isWarmup) {
+        rpe = (0.8 + rpe) / 2;
+    }
 
     const baseMoves = currentClimbType === 'lead' ? moves * 4 : moves * 10;
     const total = calculateLoad(currentClimbType, moves, angle, rpe, power, hold);
@@ -383,6 +390,10 @@ function setDefaultDate() {
     $('#session-date').value = `${yyyy}-${mm}-${dd}`;
 }
 setDefaultDate();
+
+// Wire warmup toggle to live preview
+const warmupToggleEl = $('#warmup-toggle');
+if (warmupToggleEl) warmupToggleEl.addEventListener('change', updatePreview);
 
 // ---- Reset Log Form ----
 function resetLogForm() {
@@ -1401,45 +1412,35 @@ async function deleteSession(id) {
     }
 }
 
-// ---- Export CSV ----
+// ---- Export JSON ----
 $('#btn-export').addEventListener('click', () => {
     if (allSessions.length === 0) {
         showToast('No data to export.');
         return;
     }
 
-    let csv = 'Date,Session Name,Location,Session Notes,Climb #,Type,Moves,Wall Angle,RPE,Power,Hold Type,Grade,Climb Notes,Load (CLU),Session Total (CLU)\n';
+    const exportData = allSessions.map(s => ({
+        id: s.id,
+        date: s.date,
+        name: s.name,
+        location: s.location || '',
+        notes: s.notes || '',
+        climbs: s.climbs,
+        totalLoad: s.totalLoad,
+        totalNeuro: s.totalNeuro || 0,
+        totalMetabolic: s.totalMetabolic || 0,
+        totalStructural: s.totalStructural || 0,
+        createdAt: s.createdAt
+    }));
 
-    allSessions.forEach(s => {
-        s.climbs.forEach((c, i) => {
-            csv += [
-                s.date,
-                `"${s.name}"`,
-                `"${s.location || ''}"`,
-                `"${(s.notes || '').replace(/"/g, '""')}"`,
-                i + 1,
-                c.type,
-                c.moves,
-                c.type === 'fingerboard' ? 'N/A' : (ANGLE_LABELS[String(c.angle)] || c.angle),
-                RPE_LABELS[String(c.rpe)] || c.rpe,
-                POWER_LABELS[String(c.power)] || c.power,
-                HOLD_LABELS[String(c.hold)] || c.hold,
-                `"${c.grade || ''}"`,
-                `"${(c.notes || '').replace(/"/g, '""')}"`,
-                c.load.toFixed(1),
-                s.totalLoad.toFixed(1)
-            ].join(',') + '\n';
-        });
-    });
-
-    const blob = new Blob([csv], { type: 'text/csv' });
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `sendload_export_${new Date().toISOString().split('T')[0]}.csv`;
+    a.download = `sendload_export_${new Date().toISOString().split('T')[0]}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    showToast('CSV exported!');
+    showToast('JSON exported!');
 });
 
 // ---- Utilities ----

@@ -849,6 +849,7 @@ function refreshDashboard() {
     drawModifiersChart();
     renderGradePyramids();
     drawIntensityDonut();
+    updateReadinessGauges();
 }
 
 // ---- Weekly Calendar Strip ----
@@ -1996,6 +1997,71 @@ function drawIntensityDonut() {
     drawSlice(rec, green);
 
     // Hollow center is already there as we used stroke on arc
+}
+
+function updateReadinessGauges() {
+    const container = document.getElementById('readiness-gauges');
+    if (!container) return;
+
+    const now = new Date();
+    const fortyEightHoursAgo = new Date(now);
+    fortyEightHoursAgo.setHours(now.getHours() - 48);
+
+    const twentyEightDaysAgo = new Date(now);
+    twentyEightDaysAgo.setDate(now.getDate() - 28);
+
+    let chronStruct = 0, chronNeuro = 0, chronMet = 0;
+    let acuteStruct = 0, acuteNeuro = 0, acuteMet = 0;
+
+    allSessions.forEach(s => {
+        const d = parseLocalDate(s.date);
+        const ch = getSessionChannels(s);
+
+        if (d >= twentyEightDaysAgo) {
+            chronStruct += ch.structural;
+            chronNeuro += ch.neuro;
+            chronMet += ch.metabolic;
+        }
+        if (d >= fortyEightHoursAgo) {
+            acuteStruct += ch.structural;
+            acuteNeuro += ch.neuro;
+            acuteMet += ch.metabolic;
+        }
+    });
+
+    const wChronStruct = Math.max(1, chronStruct / 4);
+    const wChronNeuro = Math.max(1, chronNeuro / 4);
+    const wChronMet = Math.max(1, chronMet / 4);
+
+    const calcReady = (acute, weekly) => Math.max(5, Math.round(100 - Math.min(100, (acute / weekly) * 100)));
+
+    const readyStruct = calcReady(acuteStruct, wChronStruct);
+    const readyNeuro = calcReady(acuteNeuro, wChronNeuro);
+    const readyMet = calcReady(acuteMet, wChronMet);
+
+    const getBarColor = (val, type) => {
+        if (val < 40) return 'var(--red-500)';
+        if (type === 'neuro') return 'var(--orange-400)';
+        if (type === 'met') return 'var(--blue-400)';
+        return 'var(--green-400)';
+    };
+
+    const renderGauge = (label, val, type) => `
+        <div style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; font-weight: 600; color: var(--text-secondary);">
+                <span>${label}</span>
+                <span>${val}%</span>
+            </div>
+            <div style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
+                <div style="height: 100%; width: ${val}%; background: ${getBarColor(val, type)}; transition: width 0.6s var(--ease-out);"></div>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = 
+        renderGauge('Structural (Tissues)', readyStruct, 'struct') +
+        renderGauge('Neuromuscular (Power)', readyNeuro, 'neuro') +
+        renderGauge('Metabolic (Pump)', readyMet, 'met');
 }
 
 function drawIntensityChart(sessions, days) {

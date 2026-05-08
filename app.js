@@ -38,6 +38,7 @@ let deloadWeeks = [];
 let chronicWindowDays = 28;
 let restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
 let activeWeeklyChannels = { neuro: true, metabolic: true, structural: true };
+let neuroDampener = 1.0, metaDampener = 1.0, structDampener = 1.0;
 let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
 let userTemplates = [];
 let unsubscribeTemplates = null;
@@ -74,6 +75,9 @@ onAuthStateChanged(auth, (user) => {
                 deloadWeeks = data.deloadWeeks || [];
                 chronicWindowDays = data.chronicWindowDays || 28;
                 restTimerDefaults = data.restTimerDefaults || { rpe7: 3, rpe8: 5, rpe9: 8 };
+                neuroDampener = data.neuroDampener ?? 1.0;
+                metaDampener = data.metaDampener ?? 1.0;
+                structDampener = data.structDampener ?? 1.0;
                 
                 // Sync UI inputs
                 const winInp = document.getElementById('setting-chronic-window');
@@ -85,10 +89,18 @@ onAuthStateChanged(auth, (user) => {
                 if (r7) r7.value = restTimerDefaults.rpe7;
                 if (r8) r8.value = restTimerDefaults.rpe8;
                 if (r9) r9.value = restTimerDefaults.rpe9;
+                
+                const nd = document.getElementById('setting-neuro-dampener');
+                const md = document.getElementById('setting-meta-dampener');
+                const sd = document.getElementById('setting-struct-dampener');
+                if (nd) nd.value = neuroDampener;
+                if (md) md.value = metaDampener;
+                if (sd) sd.value = structDampener;
             } else {
                 deloadWeeks = [];
                 chronicWindowDays = 28;
                 restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
+                neuroDampener = 1.0; metaDampener = 1.0; structDampener = 1.0;
             }
             refreshDashboard();
         });
@@ -175,13 +187,13 @@ function calculateChannels(type, moves, angle, rpe, power, hold) {
     const effectiveAngle = type === 'fingerboard' ? 1.0 : angle;
 
     // Neuromuscular: high RPE, steep angle, small holds amplify recruitment
-    const neuro = baseMoves * effectiveAngle * (rpe * rpe) * Math.sqrt(hold);
+    const neuro = (baseMoves * effectiveAngle * (rpe * rpe) * Math.sqrt(hold)) * neuroDampener;
 
     // Metabolic: peaks at moderate RPE (~1.0-1.2), drops at extremes
-    const metabolic = baseMoves * rpe * (2.0 - rpe);
+    const metabolic = (baseMoves * rpe * (2.0 - rpe)) * metaDampener;
 
     // Structural: tendon/pulley stress from small holds + dynamic movement
-    const structural = baseMoves * hold * power;
+    const structural = (baseMoves * hold * power) * structDampener;
 
     return {
         neuro: Math.round(neuro * 10) / 10,
@@ -2536,6 +2548,17 @@ $('#setting-chronic-window').addEventListener('change', (e) => {
         const val = parseInt(e.target.value) || 5;
         const newDefaults = { ...restTimerDefaults, [key]: val };
         updatePreference('restTimerDefaults', newDefaults);
+    });
+});
+
+// Channel Dampener inputs
+['neuro', 'meta', 'struct'].forEach(ch => {
+    const inputId = `#setting-${ch}-dampener`;
+    const prefKey = `${ch}Dampener`;
+    $(inputId).addEventListener('change', (e) => {
+        const val = parseFloat(e.target.value) || 1.0;
+        updatePreference(prefKey, val);
+        refreshDashboard();
     });
 });
 

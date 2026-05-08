@@ -612,6 +612,24 @@
                             <input type="number" id="setting-rest-rpe9" class="form-input" value="8">
                         </div>
                     </div>
+
+                <div style="margin-top: var(--space-lg);">
+                    <h3 style="font-size: 0.9rem; margin-bottom: var(--space-md); color: var(--text-secondary);">Channel Dampeners</h3>
+                    <p class="subtle" style="margin-bottom: var(--space-sm);">Scale the raw C4HP channel formulas. 1.0 = default. Lower to suppress, raise to amplify.</p>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="setting-neuro-dampener">Neuro</label>
+                            <input type="number" id="setting-neuro-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-meta-dampener">Metabolic</label>
+                            <input type="number" id="setting-meta-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+                        </div>
+                        <div class="form-group">
+                            <label for="setting-struct-dampener">Structural</label>
+                            <input type="number" id="setting-struct-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+                        </div>
+                    </div>
                 </div>
             </div>
 

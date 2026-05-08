@@ -2227,6 +2227,41 @@ function updateCoachInsight(sessions) {
     if (bestSession && maxScore > 2) {
         insight += ` You sent your hardest grade (${getFontGradeLabel(maxScore)}) on ${parseLocalDate(bestSession.date).toLocaleDateString()}. `;
     }
+
+    // Phase 3: Golden Conditions
+    const peakSessions = [...allSessions]
+        .map(s => {
+            let top = 0;
+            s.climbs.forEach(c => {
+                let sc = parseFontGrade(c.grade);
+                if (sc > top) top = sc;
+            });
+            return { session: s, topGrade: top };
+        })
+        .filter(x => x.topGrade > 0)
+        .sort((a, b) => b.topGrade - a.topGrade || new Date(b.session.date) - new Date(a.session.date))
+        .slice(0, 3);
+
+    if (peakSessions.length >= 1) {
+        let acuteLoads = [];
+        peakSessions.forEach(ps => {
+            const sendDate = parseLocalDate(ps.session.date);
+            const sevenDaysPrior = new Date(sendDate);
+            sevenDaysPrior.setDate(sendDate.getDate() - 7);
+            
+            const priorAcuteLoad = allSessions
+                .filter(s => {
+                    const d = parseLocalDate(s.date);
+                    return d >= sevenDaysPrior && d < sendDate;
+                })
+                .reduce((sum, s) => sum + s.totalLoad, 0);
+            
+            acuteLoads.push(priorAcuteLoad);
+        });
+        
+        const avgAcute = acuteLoads.reduce((a, b) => a + b, 0) / acuteLoads.length;
+        insight += `\n\nYour Peak Sending Sweet Spot: Your hardest grades were sent when your prior 7-day Acute Load averaged roughly ${Math.round(avgAcute)} CLU.`;
+    }
     
     textEl.textContent = insight;
 }

@@ -692,13 +692,13 @@ window.handleDeloadToggle = async (isChecked) => {
 // ---- Dashboard ----
 function refreshDashboard() {
     const now = new Date();
-    // Rolling 7-day window (replaces Monday-anchored week)
+    // Rolling 7-day window: today + 6 previous days = 7 calendar days
     const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(now.getDate() - 7);
+    sevenDaysAgo.setDate(now.getDate() - 6);
     sevenDaysAgo.setHours(0, 0, 0, 0);
 
     const fourteenDaysAgo = new Date(now);
-    fourteenDaysAgo.setDate(now.getDate() - 14);
+    fourteenDaysAgo.setDate(now.getDate() - 13);
     fourteenDaysAgo.setHours(0, 0, 0, 0);
 
     const thisWeekSessions = allSessions.filter(s => parseLocalDate(s.date) >= sevenDaysAgo);

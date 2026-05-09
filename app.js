@@ -692,17 +692,19 @@ window.handleDeloadToggle = async (isChecked) => {
 // ---- Dashboard ----
 function refreshDashboard() {
     const now = new Date();
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1)); // Monday
-    weekStart.setHours(0, 0, 0, 0);
+    // Rolling 7-day window (replaces Monday-anchored week)
+    const sevenDaysAgo = new Date(now);
+    sevenDaysAgo.setDate(now.getDate() - 7);
+    sevenDaysAgo.setHours(0, 0, 0, 0);
 
-    const lastWeekStart = new Date(weekStart);
-    lastWeekStart.setDate(lastWeekStart.getDate() - 7);
+    const fourteenDaysAgo = new Date(now);
+    fourteenDaysAgo.setDate(now.getDate() - 14);
+    fourteenDaysAgo.setHours(0, 0, 0, 0);
 
-    const thisWeekSessions = allSessions.filter(s => parseLocalDate(s.date) >= weekStart);
+    const thisWeekSessions = allSessions.filter(s => parseLocalDate(s.date) >= sevenDaysAgo);
     const lastWeekSessions = allSessions.filter(s => {
         const d = parseLocalDate(s.date);
-        return d >= lastWeekStart && d < weekStart;
+        return d >= fourteenDaysAgo && d < sevenDaysAgo;
     });
 
     const weeklyLoad = thisWeekSessions.reduce((s, sess) => s + sess.totalLoad, 0);
@@ -746,9 +748,13 @@ function refreshDashboard() {
     const pastChronicStart = new Date(now);
     pastChronicStart.setDate(now.getDate() - chronicWindowDays);
     pastChronicStart.setHours(0,0,0,0);
+    const sixHoursAgoACWR = new Date(now.getTime() - 6 * 3600 * 1000);
     const lastChronicSessions = allSessions.filter(s => {
         const d = parseLocalDate(s.date);
-        return d >= pastChronicStart && d <= now;
+        if (d < pastChronicStart || d > now) return false;
+        // 6-hour adaptation delay: exclude sessions logged within the last 6 hours
+        const sessTime = s.createdAt ? new Date(s.createdAt) : d;
+        return sessTime <= sixHoursAgoACWR;
     });
     const chronicTotal = lastChronicSessions.reduce((s, sess) => s + sess.totalLoad, 0);
     const chronicLoadAvg = chronicTotal / (chronicWindowDays / 7);
@@ -884,7 +890,7 @@ function refreshDashboard() {
     updateReadinessGauges();
 }
 
-// ---- Weekly Calendar Strip ----
+// ---- Rolling 7-Day Calendar Strip ----
 function renderWeekStrip() {
     const container = $('#week-strip-days');
     const header = $('#week-strip');
@@ -893,31 +899,33 @@ function renderWeekStrip() {
     const now = new Date();
     const todayStr = formatLocalDate(now);
 
-    // Get Monday of the target week (offset from current)
-    const weekStart = new Date(now);
-    weekStart.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1) + (weekStripOffset * 7));
-    weekStart.setHours(0, 0, 0, 0);
+    // Rolling 7-day window: starts 6 days ago, ends today (offset shifts by 7)
+    const stripStart = new Date(now);
+    stripStart.setDate(now.getDate() - 6 + (weekStripOffset * 7));
+    stripStart.setHours(0, 0, 0, 0);
 
-    const weekEnd = new Date(weekStart);
-    weekEnd.setDate(weekEnd.getDate() + 6);
+    const stripEnd = new Date(stripStart);
+    stripEnd.setDate(stripEnd.getDate() + 6);
 
     // Update header with date range and nav arrows
     const headerEl = header.querySelector('.week-strip-header h3');
     if (headerEl) {
         const fmt = (d) => `${d.getDate()}/${d.getMonth() + 1}`;
-        const label = weekStripOffset === 0 ? 'This Week' : `${fmt(weekStart)} - ${fmt(weekEnd)}`;
+        const label = weekStripOffset === 0 ? 'Last 7 Days' : `${fmt(stripStart)} – ${fmt(stripEnd)}`;
         const fwdBtn = weekStripOffset < 0 ? `<button class="ws-nav-btn" onclick="weekStripNav(1)">&#9654;</button>` : '';
         const todayBtn = weekStripOffset !== 0 ? ` <button class="ws-today-btn" onclick="weekStripOffset=0;renderWeekStrip();">Today</button>` : '';
         headerEl.innerHTML = `<button class="ws-nav-btn" onclick="weekStripNav(-1)">&#9664;</button> <span>${label}</span> ${fwdBtn}${todayBtn}`;
     }
 
-    const dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const shortDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const days = [];
 
     for (let i = 0; i < 7; i++) {
-        const dayDate = new Date(weekStart);
-        dayDate.setDate(weekStart.getDate() + i);
+        const dayDate = new Date(stripStart);
+        dayDate.setDate(stripStart.getDate() + i);
         const dateStr = formatLocalDate(dayDate);
+        const dayName = shortDays[dayDate.getDay()];
+        const dateLabel = `${dayName} ${dayDate.getDate()}/${dayDate.getMonth() + 1}`;
 
         const daySessions = allSessions.filter(s => s.date === dateStr);
         let neuro = 0, meta = 0, struct = 0, total = 0;
@@ -929,7 +937,7 @@ function renderWeekStrip() {
             total += sess.totalLoad;
         });
 
-        days.push({ label: dayLabels[i], dateStr, isToday: dateStr === todayStr, neuro, meta, struct, total, sessionCount: daySessions.length });
+        days.push({ label: dateLabel, dateStr, isToday: dateStr === todayStr, neuro, meta, struct, total, sessionCount: daySessions.length });
     }
 
     const allChannelVals = days.flatMap(d => [d.neuro, d.meta, d.struct]);
@@ -1793,12 +1801,19 @@ function getChronicLoadASL() {
     const now = new Date();
     const chronicStart = new Date(now);
     chronicStart.setDate(now.getDate() - chronicWindowDays);
+    const sixHoursAgo = new Date(now.getTime() - 6 * 3600 * 1000);
     
-    const recentSessions = allSessions.filter(s => parseLocalDate(s.date) >= chronicStart);
+    const recentSessions = allSessions.filter(s => {
+        const d = parseLocalDate(s.date);
+        if (d < chronicStart) return false;
+        // 6-hour adaptation delay: only include sessions older than 6 hours
+        const sessTime = s.createdAt ? new Date(s.createdAt) : d;
+        return sessTime <= sixHoursAgo;
+    });
     if (recentSessions.length === 0) return 0;
     
     const totalCLU = recentSessions.reduce((sum, s) => sum + s.totalLoad, 0);
-    return totalCLU / (chronicWindowDays / 7); // weekly average
+    return totalCLU / recentSessions.length;
 }
 
 $('#session-target-select').addEventListener('change', () => updateTargetUI());
@@ -2181,6 +2196,7 @@ function updateReadinessGauges() {
     const chronicStart = new Date(now);
     chronicStart.setDate(now.getDate() - chronicWindowDays);
     
+    const sixHoursAgoGauges = new Date(now.getTime() - 6 * 3600 * 1000);
     const sevenDaysAgo = new Date(now);
     sevenDaysAgo.setDate(now.getDate() - 7);
 
@@ -2191,11 +2207,14 @@ function updateReadinessGauges() {
         const d = parseLocalDate(s.date);
         const ch = getSessionChannels(s);
 
-        // Chronic Capacity
+        // Chronic Capacity (6-hour adaptation delay)
         if (d >= chronicStart) {
-            chronStruct += ch.structural;
-            chronNeuro += ch.neuro;
-            chronMet += ch.metabolic;
+            const sessTimeChronic = s.createdAt ? new Date(s.createdAt) : d;
+            if (sessTimeChronic <= sixHoursAgoGauges) {
+                chronStruct += ch.structural;
+                chronNeuro += ch.neuro;
+                chronMet += ch.metabolic;
+            }
         }
 
         // Acute Decay (7d)

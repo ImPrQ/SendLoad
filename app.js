@@ -337,6 +337,7 @@ function switchToView(viewName) {
     const btn = $(`[data-view="${viewName}"]`);
     if (btn) btn.classList.add('active');
 
+    const alreadyInSettings = views.settings.classList.contains('active');
     Object.values(views).forEach(v => v.classList.remove('active'));
     if (views[viewName]) {
         views[viewName].classList.add('active');
@@ -346,7 +347,6 @@ function switchToView(viewName) {
     if (viewName === 'analytics') renderAnalytics();
     if (viewName === 'history') renderHistory();
     if (viewName === 'settings') {
-        const alreadyInSettings = views.settings.classList.contains('active');
         if (!alreadyInSettings) showSettingsSection('general');
     }
     if (viewName === 'log' && !editingSessionId) {
@@ -362,12 +362,15 @@ function switchToView(viewName) {
 // ---- Info View Logic ----
 window.showInfoSection = function(sectionId) {
     // Update Tabs
-    $$('.info-tab').forEach(t => t.classList.remove('active'));
-    const activeTab = Array.from($$('.info-tab')).find(t => t.getAttribute('onclick').includes(`'${sectionId}'`));
-    if (activeTab) activeTab.classList.add('active');
+    $$('#info-sidebar .info-tab').forEach(t => {
+        t.classList.remove('active');
+        if (t.dataset.section === sectionId) {
+            t.classList.add('active');
+        }
+    });
 
     // Update Content
-    $$('.info-section').forEach(s => s.classList.remove('active'));
+    $$('#view-info .info-section').forEach(s => s.classList.remove('active'));
     const section = $(`#info-${sectionId}`);
     if (section) section.classList.add('active');
 
@@ -378,6 +381,16 @@ window.showInfoSection = function(sectionId) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 };
+
+// Bind event listeners to info tabs
+$$('#info-sidebar .info-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const sectionId = tab.dataset.section;
+        if (sectionId) {
+            showInfoSection(sectionId);
+        }
+    });
+});
 
 window.goToInfo = function(sectionId) {
     switchToView('info');
@@ -2788,14 +2801,27 @@ if (exportBtnSettings) exportBtnSettings.addEventListener('click', handleExport)
 
 // ---- Advanced Customization Logic ----
 window.showSettingsSection = function(sectionId) {
-    $$('#settings-sidebar .info-tab').forEach(t => t.classList.remove('active'));
-    const activeTab = Array.from($$('#settings-sidebar .info-tab')).find(t => t.getAttribute('onclick').includes(`'${sectionId}'`));
-    if (activeTab) activeTab.classList.add('active');
+    $$('#settings-sidebar .info-tab').forEach(t => {
+        t.classList.remove('active');
+        if (t.dataset.section === sectionId) {
+            t.classList.add('active');
+        }
+    });
 
     $$('#view-settings .info-section').forEach(s => s.classList.remove('active'));
     const section = $(`#settings-${sectionId}`);
     if (section) section.classList.add('active');
 };
+
+// Bind event listeners to settings tabs
+$$('#settings-sidebar .info-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+        const sectionId = tab.dataset.section;
+        if (sectionId) {
+            showSettingsSection(sectionId);
+        }
+    });
+});
 
 function syncMultiplierInputs() {
     // Angle

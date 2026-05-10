@@ -619,11 +619,11 @@
     <main id="view-settings" class="view">
         <div class="info-container">
             <aside class="info-sidebar" id="settings-sidebar">
-                <button class="info-tab active" onclick="showSettingsSection('general')">General</button>
-                <button class="info-tab" onclick="showSettingsSection('multipliers')">Multipliers</button>
-                <button class="info-tab" onclick="showSettingsSection('widgets')">Widgets</button>
-                <button class="info-tab" onclick="showSettingsSection('appearance')">Appearance</button>
-                <button class="info-tab" onclick="showSettingsSection('data')">Data & Account</button>
+                <button class="info-tab active" data-section="general">General</button>
+                <button class="info-tab" data-section="multipliers">Multipliers</button>
+                <button class="info-tab" data-section="widgets">Widgets</button>
+                <button class="info-tab" data-section="appearance">Appearance</button>
+                <button class="info-tab" data-section="data">Data & Account</button>
             </aside>
             <div class="info-content">
                 <!-- General Settings -->
@@ -861,13 +861,13 @@
     <main id="view-info" class="view">
         <div class="info-container">
             <aside class="info-sidebar" id="info-sidebar">
-                <button class="info-tab active" onclick="showInfoSection('clu')">What is CLU?</button>
-                <button class="info-tab" onclick="showInfoSection('acwr')">ACWR Guide</button>
-                <button class="info-tab" onclick="showInfoSection('channels')">Stress Channels</button>
-                <button class="info-tab" onclick="showInfoSection('readiness')">Project Readiness</button>
-                <button class="info-tab" onclick="showInfoSection('velocity')">Velocity Tracker</button>
-                <button class="info-tab" onclick="showInfoSection('intensity')">Intensity per Move</button>
-                <button class="info-tab" onclick="showInfoSection('correlator')">Performance Correlator</button>
+                <button class="info-tab active" data-section="clu">What is CLU?</button>
+                <button class="info-tab" data-section="acwr">ACWR Guide</button>
+                <button class="info-tab" data-section="channels">Stress Channels</button>
+                <button class="info-tab" data-section="readiness">Project Readiness</button>
+                <button class="info-tab" data-section="velocity">Velocity Tracker</button>
+                <button class="info-tab" data-section="intensity">Intensity per Move</button>
+                <button class="info-tab" data-section="correlator">Performance Correlator</button>
             </aside>
             <div class="info-content">
                 <section id="info-clu" class="info-section active">

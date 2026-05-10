@@ -1040,9 +1040,7 @@ function refreshDashboard() {
 
     // Charts & Pyramids
     drawWeeklyChart();
-    drawModifiersChart();
     renderGradePyramids();
-    drawIntensityHistogram();
     updateReadinessGauges();
 }
 
@@ -1393,9 +1391,12 @@ document.querySelectorAll('#chart-weekly .legend-item[data-channel]').forEach(bt
 function drawModifiersChart() {
     const canvas = $('#canvas-modifiers');
     const ctx = canvas.getContext('2d');
-    const dpr = window.devicePixelRatio || 1;
-
+    
+    // Ensure parent is visible and has width before drawing
     const rect = canvas.parentElement.getBoundingClientRect();
+    if (rect.width === 0) return;
+
+    const dpr = window.devicePixelRatio || 1;
     canvas.width = rect.width * dpr;
     canvas.height = 280 * dpr;
     canvas.style.width = rect.width + 'px';
@@ -2134,6 +2135,8 @@ window.renderAnalytics = function() {
     drawVelocityChart(sessions, timeframeDays);
     drawIntensityChart(sessions, timeframeDays);
     drawCorrelatorChart(sessions, timeframeDays);
+    drawIntensityHistogram();
+    drawModifiersChart();
     updateCoachInsight(sessions);
 };
 
@@ -2906,9 +2909,9 @@ function applyWidgetVisibility() {
         polarization: '#card-intensity-histogram',
         pyramids: '#card-pyramids',
         modifiers: '#chart-modifiers',
-        velocity: '#view-analytics .chart-card:nth-of-type(1)',
-        intensity: '#view-analytics .chart-card:nth-of-type(2)',
-        correlator: '#view-analytics .chart-card:nth-of-type(3)'
+        velocity: '#card-velocity',
+        intensity: '#card-intensity-move',
+        correlator: '#card-correlator'
     };
 
     Object.keys(map).forEach(key => {

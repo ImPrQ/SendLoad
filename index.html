@@ -218,17 +218,6 @@
                 </div>
             </div>
 
-            <!-- Polarization Profile Histogram -->
-            <div class="chart-card span-full" id="card-intensity-histogram">
-                <div class="card-header">
-                    <h2>Polarization Profile (Last 14 Days)</h2>
-                    <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Total CLU distributed by Intensity Zone</p>
-                </div>
-                <div class="chart-container">
-                    <canvas id="canvas-intensity-hist" width="800" height="260"></canvas>
-                </div>
-            </div>
-
             <!-- Grade Pyramids -->
             <div class="chart-card span-full" id="card-pyramids">
                 <div class="card-header">
@@ -243,22 +232,6 @@
                         <h3>Lead</h3>
                         <div id="pyramid-lead" class="pyramid-stack"></div>
                     </div>
-                </div>
-            </div>
-
-            <!-- Average Modifiers Chart -->
-            <div class="chart-card span-full" id="chart-modifiers">
-                <div class="card-header">
-                    <h2>Average Modifiers (All Sessions)</h2>
-                    <div class="chart-legend">
-                        <span class="legend-item"><span class="legend-dot" style="background:var(--orange-500)"></span>Wall Angle</span>
-                        <span class="legend-item"><span class="legend-dot" style="background:var(--blue-500)"></span>RPE</span>
-                        <span class="legend-item"><span class="legend-dot" style="background:var(--green-500)"></span>Power</span>
-                        <span class="legend-item"><span class="legend-dot" style="background:var(--purple-500)"></span>Hold</span>
-                    </div>
-                </div>
-                <div class="chart-container">
-                    <canvas id="canvas-modifiers" width="800" height="280"></canvas>
                 </div>
             </div>
 
@@ -549,7 +522,7 @@
             </div>
 
             <!-- The Velocity Tracker (C4HP) -->
-            <div class="chart-card span-full" style="margin-bottom: var(--space-lg);">
+            <div class="chart-card span-full" style="margin-bottom: var(--space-lg);" id="card-velocity">
                 <div class="card-header">
                     <div style="display: flex; align-items: center; gap: 10px;">
                         <h2>Velocity Transition Tracker</h2>
@@ -566,7 +539,7 @@
 
             <!-- Junk Miles Detector & Correlator -->
             <div class="pyramids-container" style="display: flex; flex-direction: column; gap: var(--space-lg); margin-bottom: var(--space-lg);">
-                <div class="chart-card span-full">
+                <div class="chart-card span-full" id="card-intensity-move">
                     <div class="card-header">
                         <div style="display: flex; align-items: center; gap: 10px;">
                             <h2>Intensity per Move</h2>
@@ -581,7 +554,7 @@
                     </div>
                 </div>
 
-                <div class="chart-card span-full">
+                <div class="chart-card span-full" id="card-correlator">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
                             <div style="display: flex; align-items: center; gap: 10px;">
@@ -600,6 +573,33 @@
                     </div>
                     <div class="chart-container">
                         <canvas id="canvas-correlator" width="800" height="280"></canvas>
+                    </div>
+                </div>
+
+                <!-- Polarization Profile Histogram -->
+                <div class="chart-card span-full" id="card-intensity-histogram">
+                    <div class="card-header">
+                        <h2>Polarization Profile (Last 14 Days)</h2>
+                        <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Total CLU distributed by Intensity Zone</p>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="canvas-intensity-hist" width="800" height="260"></canvas>
+                    </div>
+                </div>
+
+                <!-- Average Modifiers Chart -->
+                <div class="chart-card span-full" id="chart-modifiers">
+                    <div class="card-header">
+                        <h2>Average Modifiers (All Sessions)</h2>
+                        <div class="chart-legend">
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--orange-500)"></span>Wall Angle</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--blue-500)"></span>RPE</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--green-500)"></span>Power</span>
+                            <span class="legend-item"><span class="legend-dot" style="background:var(--purple-500)"></span>Hold</span>
+                        </div>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="canvas-modifiers" width="800" height="280"></canvas>
                     </div>
                 </div>
             </div>
@@ -741,11 +741,44 @@
                     <h2>Widget Visibility</h2>
                     <p class="subtle">Toggle which figures and charts appear on your Dashboard and Analytics pages.</p>
                     
-                    <div class="toggle-list" style="margin-top: var(--space-lg);">
+                    <h3 style="margin-top: var(--space-lg); font-size: 0.9rem; color: var(--text-secondary);">Dashboard</h3>
+                    <div class="toggle-list">
                         <div class="toggle-item">
                             <span>Weekly Load Trend</span>
                             <label class="switch small">
                                 <input type="checkbox" id="w-show-weekly" checked onchange="updateWidgetVisibility('weekly', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Grade Pyramids</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-pyramids" checked onchange="updateWidgetVisibility('pyramids', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <h3 style="margin-top: var(--space-lg); font-size: 0.9rem; color: var(--text-secondary);">Analytics</h3>
+                    <div class="toggle-list">
+                        <div class="toggle-item">
+                            <span>Velocity Tracker</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-velocity" checked onchange="updateWidgetVisibility('velocity', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Intensity per Move</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-intensity" checked onchange="updateWidgetVisibility('intensity', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Performance Correlator</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-correlator" checked onchange="updateWidgetVisibility('correlator', this.checked)">
                                 <span class="slider"></span>
                             </label>
                         </div>
@@ -757,37 +790,9 @@
                             </label>
                         </div>
                         <div class="toggle-item">
-                            <span>Grade Pyramids</span>
-                            <label class="switch small">
-                                <input type="checkbox" id="w-show-pyramids" checked onchange="updateWidgetVisibility('pyramids', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="toggle-item">
                             <span>Average Modifiers</span>
                             <label class="switch small">
                                 <input type="checkbox" id="w-show-modifiers" checked onchange="updateWidgetVisibility('modifiers', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="toggle-item">
-                            <span>Velocity Tracker (Analytics)</span>
-                            <label class="switch small">
-                                <input type="checkbox" id="w-show-velocity" checked onchange="updateWidgetVisibility('velocity', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="toggle-item">
-                            <span>Intensity per Move (Analytics)</span>
-                            <label class="switch small">
-                                <input type="checkbox" id="w-show-intensity" checked onchange="updateWidgetVisibility('intensity', this.checked)">
-                                <span class="slider"></span>
-                            </label>
-                        </div>
-                        <div class="toggle-item">
-                            <span>Performance Correlator (Analytics)</span>
-                            <label class="switch small">
-                                <input type="checkbox" id="w-show-correlator" checked onchange="updateWidgetVisibility('correlator', this.checked)">
                                 <span class="slider"></span>
                             </label>
                         </div>

@@ -61,3 +61,8 @@ There is currently no automated test suite. Manual verification is performed by 
 - **Local Time:** Dates are handled in local time using `formatLocalDate` and `parseLocalDate`.
 - **Surgical DOM Updates:** Prefers `document.querySelector` (aliased as `$`) for targeted updates.
 - **Chart Rendering:** All charts are drawn directly to `<canvas>` elements using the 2D context. When adding or modifying charts, ensure High-DPI support by scaling with `window.devicePixelRatio`.
+
+## Workflow
+
+- **Local Verification:** After making changes, start a local server (e.g., `python -m http.server 8000`) and provide the address to the user.
+- **Commit & Push:** Do not commit or push changes until the user has manually tested and verified the feature. Once verified, the user will explicitly instruct to commit and push to the `main` branch.

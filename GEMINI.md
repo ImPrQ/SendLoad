@@ -66,3 +66,7 @@ There is currently no automated test suite. Manual verification is performed by 
 
 - **Local Verification:** After making changes, start a local server (e.g., `python -m http.server 8000`) and provide the address to the user.
 - **Commit & Push:** Do not commit or push changes until the user has manually tested and verified the feature. Once verified, the user will explicitly instruct to commit and push to the `main` branch.
+
+## Troubleshooting
+
+- **Git/Shell Commands:** On this system (Windows/PowerShell), the `&&` operator for chaining commands may fail. Use `;` instead (e.g., `git status; git diff HEAD; git log -n 3`).

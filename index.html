@@ -45,6 +45,10 @@
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M18 9l-5 5-3-3-4 4"/></svg>
                 Analytics
             </button>
+            <button class="nav-tab" data-view="info" id="btn-info">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                Info
+            </button>
             <button class="nav-tab" data-view="settings" id="btn-settings" style="margin-left: auto;">
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
                 Settings
@@ -83,7 +87,12 @@
 
         <div class="stat-card span-full" style="flex-direction: column; align-items: stretch; margin-bottom: 24px;" id="readiness-gauges-container">
             <div style="display: flex; justify-content: space-between; margin-bottom: 12px;">
-                <h3 style="font-size: 1rem; font-weight: 700;">Project Readiness</h3>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <h3 style="font-size: 1rem; font-weight: 700;">Project Readiness</h3>
+                    <button class="info-icon-btn" onclick="goToInfo('readiness')" title="What is Readiness?">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                    </button>
+                </div>
                 <span style="font-size: 0.8rem; color: var(--text-muted);">Real-time Fatigue Decay</span>
             </div>
             <div id="readiness-gauges"></div>
@@ -132,7 +141,12 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
                 </div>
                 <div class="stat-content">
-                    <span class="stat-label">Load (7d)</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="stat-label">Load (7d)</span>
+                        <button class="info-icon-btn" onclick="goToInfo('clu')" title="What is CLU?">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
+                    </div>
                     <span class="stat-value" id="weekly-load">0</span>
                     <span class="stat-unit">CLU</span>
                     <div id="channel-breakdown-bar" class="channel-bar" style="display:none;"></div>
@@ -163,7 +177,12 @@
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 8v4l3 3"/></svg>
                 </div>
                 <div class="stat-content">
-                    <span class="stat-label">ACWR Ratio</span>
+                    <div style="display: flex; align-items: center; gap: 6px;">
+                        <span class="stat-label">ACWR Ratio</span>
+                        <button class="info-icon-btn" onclick="goToInfo('acwr')" title="What is ACWR?">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
+                    </div>
                     <span class="stat-value" id="acwr-ratio">—</span>
                     <span class="stat-unit" id="acwr-zone" style="font-weight:700">Need Data</span>
                 </div>
@@ -182,7 +201,12 @@
             <!-- Weekly Load Chart -->
             <div class="chart-card span-full" id="chart-weekly">
                 <div class="card-header">
-                    <h2>Weekly Load Trend</h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2>Weekly Load Trend</h2>
+                        <button class="info-icon-btn" onclick="goToInfo('channels')" title="About Stress Channels">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
+                    </div>
                     <div class="chart-legend">
                         <button class="legend-item active" data-channel="neuro"><span class="legend-dot" style="background:linear-gradient(135deg, #fb923c, #ef4444)"></span>Neuro</button>
                         <button class="legend-item active" data-channel="metabolic"><span class="legend-dot" style="background:linear-gradient(135deg, #60a5fa, #3b82f6)"></span>Metabolic</button>
@@ -527,7 +551,12 @@
             <!-- The Velocity Tracker (C4HP) -->
             <div class="chart-card span-full" style="margin-bottom: var(--space-lg);">
                 <div class="card-header">
-                    <h2>Velocity Transition Tracker</h2>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <h2>Velocity Transition Tracker</h2>
+                        <button class="info-icon-btn" onclick="goToInfo('velocity')" title="About Velocity Tracking">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
+                    </div>
                     <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Tracking Tissue Prep (Low Vel) into Power Phase (High Vel)</p>
                 </div>
                 <div class="chart-container">
@@ -539,7 +568,12 @@
             <div class="pyramids-container" style="display: flex; flex-direction: column; gap: var(--space-lg); margin-bottom: var(--space-lg);">
                 <div class="chart-card span-full">
                     <div class="card-header">
-                        <h2>Intensity per Move</h2>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <h2>Intensity per Move</h2>
+                            <button class="info-icon-btn" onclick="goToInfo('intensity')" title="About Intensity">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                            </button>
+                        </div>
                         <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Total CLU / Total Moves. High means limit bouldering, low means junk miles.</p>
                     </div>
                     <div class="chart-container">
@@ -550,9 +584,11 @@
                 <div class="chart-card span-full">
                     <div class="card-header">
                         <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                            <div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
                                 <h2>Performance Correlator</h2>
-                                <p class="subtle" style="font-size: 0.8rem; margin-top: 4px;">Max Font Grade Sent over Time</p>
+                                <button class="info-icon-btn" onclick="goToInfo('correlator')" title="About Correlator">
+                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                                </button>
                             </div>
                             <select id="analytics-timeframe" class="form-input" style="width: auto; padding: 4px 8px; font-size: 0.8rem;">
                                 <option value="7">Last 7 Days</option>
@@ -664,6 +700,69 @@
                         Wipe All Data (Irreversible)
                     </button>
                 </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Info View -->
+    <main id="view-info" class="view">
+        <div class="info-container">
+            <aside class="info-sidebar" id="info-sidebar">
+                <button class="info-tab active" onclick="showInfoSection('clu')">What is CLU?</button>
+                <button class="info-tab" onclick="showInfoSection('acwr')">ACWR Guide</button>
+                <button class="info-tab" onclick="showInfoSection('channels')">Stress Channels</button>
+                <button class="info-tab" onclick="showInfoSection('readiness')">Project Readiness</button>
+                <button class="info-tab" onclick="showInfoSection('velocity')">Velocity Tracker</button>
+                <button class="info-tab" onclick="showInfoSection('intensity')">Intensity per Move</button>
+                <button class="info-tab" onclick="showInfoSection('correlator')">Performance Correlator</button>
+            </aside>
+            <div class="info-content">
+                <section id="info-clu" class="info-section active">
+                    <h2>What is CLU?</h2>
+                    <p><strong>CLU (Climbing Load Unit)</strong> is the core metric used in SendLoad to quantify training volume and intensity. Unlike simple move counts, CLU accounts for the difficulty and physical demand of each climb.</p>
+                    <p>The formula incorporates:</p>
+                    <ul>
+                        <li><strong>Base Volume:</strong> Number of moves (weighted by discipline).</li>
+                        <li><strong>Wall Angle:</strong> Steeper walls multiply the load.</li>
+                        <li><strong>RPE (Perceived Exertion):</strong> How hard you felt you worked.</li>
+                        <li><strong>Power & Hold Modifiers:</strong> Dynamic movement and small holds increase tissue stress.</li>
+                    </ul>
+                </section>
+                <section id="info-acwr" class="info-section">
+                    <h2>ACWR Guide</h2>
+                    <p>The <strong>Acute:Chronic Workload Ratio (ACWR)</strong> is a world-class methodology for monitoring injury risk and training readiness.</p>
+                    <ul>
+                        <li><strong>Acute Load:</strong> Your total training load over the last 7 days.</li>
+                        <li><strong>Chronic Load:</strong> Your average weekly training load over the last 28 days (your baseline capacity).</li>
+                    </ul>
+                    <p>A ratio between <strong>0.8 and 1.3</strong> is generally considered the "Sweet Spot" for safe performance gains.</p>
+                </section>
+                <section id="info-channels" class="info-section">
+                    <h2>Stress Channels</h2>
+                    <p>SendLoad breaks down every climb into three distinct physiological "channels":</p>
+                    <ul>
+                        <li><span class="ch-neuro-text">Neuromuscular:</span> Stress on the central nervous system and motor unit recruitment (high RPE, steep angles).</li>
+                        <li><span class="ch-meta-text">Metabolic:</span> Demand on energy systems (high volume, moderate RPE).</li>
+                        <li><span class="ch-struct-text">Structural:</span> Strain on connective tissues, tendons, and pulleys (small holds, dynamic movement).</li>
+                    </ul>
+                </section>
+                <section id="info-readiness" class="info-section">
+                    <h2>Project Readiness</h2>
+                    <p>This gauge tracks your <strong>Fatigue Decay</strong>. It estimates how recovered you are based on the intensity and timing of your recent sessions.</p>
+                    <p>Higher readiness indicates you are fresh and ready for high-intensity "project" attempts, while low readiness suggests you should focus on recovery or low-intensity volume.</p>
+                </section>
+                <section id="info-velocity" class="info-section">
+                    <h2>Velocity Transition Tracker</h2>
+                    <p>Based on C4HP training principles, this chart monitors your transition through training phases. It tracks how you move from <strong>Tissue Preparation</strong> (Low Velocity) into <strong>Power Phases</strong> (High Velocity).</p>
+                </section>
+                <section id="info-intensity" class="info-section">
+                    <h2>Intensity per Move</h2>
+                    <p>This metric (Total CLU / Total Moves) helps identify the quality of your training. High intensity per move suggests limit bouldering or specific power training. Consistently low intensity might indicate "junk miles"—volume that adds fatigue without sufficient stimulus for adaptation.</p>
+                </section>
+                <section id="info-correlator" class="info-section">
+                    <h2>Performance Correlator</h2>
+                    <p>This chart maps your maximum sent grade against your training load over time. It helps you visualize which training patterns (high volume vs. high intensity) lead to your best performance peaks.</p>
+                </section>
             </div>
         </div>
     </main>

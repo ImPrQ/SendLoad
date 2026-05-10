@@ -245,6 +245,7 @@ const views = {
     log: $('#view-log'),
     history: $('#view-history'),
     analytics: $('#view-analytics'),
+    info: $('#view-info'),
     settings: $('#view-settings')
 };
 
@@ -255,7 +256,9 @@ function switchToView(viewName) {
     if (btn) btn.classList.add('active');
 
     Object.values(views).forEach(v => v.classList.remove('active'));
-    views[viewName].classList.add('active');
+    if (views[viewName]) {
+        views[viewName].classList.add('active');
+    }
 
     if (viewName === 'dashboard') refreshDashboard();
     if (viewName === 'analytics') renderAnalytics();
@@ -269,6 +272,31 @@ function switchToView(viewName) {
         setTimeout(() => updateTargetUI(), 50);
     }
 }
+
+// ---- Info View Logic ----
+window.showInfoSection = function(sectionId) {
+    // Update Tabs
+    $$('.info-tab').forEach(t => t.classList.remove('active'));
+    const activeTab = Array.from($$('.info-tab')).find(t => t.getAttribute('onclick').includes(`'${sectionId}'`));
+    if (activeTab) activeTab.classList.add('active');
+
+    // Update Content
+    $$('.info-section').forEach(s => s.classList.remove('active'));
+    const section = $(`#info-${sectionId}`);
+    if (section) section.classList.add('active');
+
+    // Scroll to top or section
+    if (window.innerWidth <= 800) {
+        section?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } else {
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+};
+
+window.goToInfo = function(sectionId) {
+    switchToView('info');
+    showInfoSection(sectionId);
+};
 
 $$('.nav-tab').forEach(tab => {
     tab.addEventListener('click', () => {

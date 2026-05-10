@@ -803,6 +803,75 @@
                     </div>
                 </section>
 
+                <!-- Advanced Analytics -->
+                <section id="settings-analytics" class="info-section">
+                    <h2>Advanced Analytics Tuning</h2>
+                    <p class="subtle">Fine-tune the bi-exponential fatigue decay engine. Partitions define how much load goes to the "Fast" (Acute) vs "Slow" (Systemic) tracks.</p>
+                    
+                    <div class="settings-grid">
+                        <!-- Neuromuscular -->
+                        <div class="session-meta-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--orange-400);">Neuromuscular (CNS/Ca2+)</h3>
+                            <div class="form-group">
+                                <label>Fast Partition (%)</label>
+                                <input type="number" id="tuning-neuro-partition" class="form-input" min="0" max="100" value="70">
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label>Fast Half-life (h)</label>
+                                    <input type="number" id="tuning-neuro-fastHL" class="form-input" min="1" value="24">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Slow Half-life (h)</label>
+                                    <input type="number" id="tuning-neuro-slowHL" class="form-input" min="1" value="192">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Structural -->
+                        <div class="session-meta-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--green-400);">Structural (Tissue/Tendon)</h3>
+                            <div class="form-group">
+                                <label>Fast Partition (%)</label>
+                                <input type="number" id="tuning-struct-partition" class="form-input" min="0" max="100" value="50">
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label>Fast Half-life (h)</label>
+                                    <input type="number" id="tuning-struct-fastHL" class="form-input" min="1" value="36">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Slow Half-life (h)</label>
+                                    <input type="number" id="tuning-struct-slowHL" class="form-input" min="1" value="336">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Metabolic -->
+                        <div class="session-meta-card">
+                            <h3 style="font-size: 0.9rem; margin-bottom: 12px; color: var(--blue-400);">Metabolic (Energy/Pump)</h3>
+                            <div class="form-group">
+                                <label>Fast Partition (%)</label>
+                                <input type="number" id="tuning-meta-partition" class="form-input" min="0" max="100" value="90">
+                            </div>
+                            <div style="display: flex; gap: 12px;">
+                                <div class="form-group" style="flex:1;">
+                                    <label>Fast Half-life (h)</label>
+                                    <input type="number" id="tuning-meta-fastHL" class="form-input" min="1" value="6">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Slow Half-life (h)</label>
+                                    <input type="number" id="tuning-meta-slowHL" class="form-input" min="1" value="48">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-secondary" onclick="resetSettingsTab('analytics')">Reset to Defaults</button>
+                    </div>
+                </section>
+
                 <!-- Appearance -->
                 <section id="settings-appearance" class="info-section">
                     <h2>Appearance</h2>

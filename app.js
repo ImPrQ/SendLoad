@@ -52,6 +52,12 @@ let themeColor = 'orange';
 let defaultLogPreset = 'boulder';
 let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
 
+let fatigueTuning = {
+    meta: { partition: 0.9, fastHL: 6, slowHL: 48 },
+    neuro: { partition: 0.7, fastHL: 24, slowHL: 192 },
+    struct: { partition: 0.5, fastHL: 36, slowHL: 336 }
+};
+
 // ---- Legacy Mapping (for retroactive multiplier support) ----
 const LEGACY_MAPS = {
     angle: { '0.8': 'slab', '1': 'vertical', '1.0': 'vertical', '1.2': '20deg', '1.4': '30deg', '1.6': '40deg', '1.8': '50deg' },
@@ -139,10 +145,21 @@ onAuthStateChanged(auth, (user) => {
                 customMultipliers = data.customMultipliers || customMultipliers;
                 themeColor = data.themeColor || 'orange';
                 defaultLogPreset = data.defaultLogPreset || 'boulder';
+                fatigueTuning = data.fatigueTuning || fatigueTuning;
                 
                 // Sync UI inputs
                 const winInp = document.getElementById('setting-chronic-window');
                 if (winInp) winInp.value = chronicWindowDays;
+
+                // Sync Fatigue Tuning UI
+                ['meta', 'neuro', 'struct'].forEach(ch => {
+                    const part = document.getElementById(`tuning-${ch}-partition`);
+                    const fast = document.getElementById(`tuning-${ch}-fastHL`);
+                    const slow = document.getElementById(`tuning-${ch}-slowHL`);
+                    if (part) part.value = fatigueTuning[ch].partition * 100;
+                    if (fast) fast.value = fatigueTuning[ch].fastHL;
+                    if (slow) slow.value = fatigueTuning[ch].slowHL;
+                });
                 
                 // Sync Info tab documentation
                 const infoDays = document.getElementById('info-chronic-days');
@@ -269,7 +286,7 @@ function calculateChannels(type, moves, angle, rpe, power, hold) {
     const effectiveAngle = type === 'fingerboard' ? 1.0 : angle;
 
     // Neuromuscular: high RPE, steep angle, small holds amplify recruitment
-    const neuro = (baseMoves * effectiveAngle * (rpe * rpe) * Math.sqrt(hold)) * neuroDampener;
+    const neuro = (baseMoves * effectiveAngle * (rpe * rpe) * Math.sqrt(hold) * Math.sqrt(power)) * neuroDampener;
 
     // Metabolic: peaks at moderate RPE (~1.0-1.2), drops at extremes
     const metabolic = (baseMoves * rpe * (2.0 - rpe)) * metaDampener;
@@ -2356,11 +2373,16 @@ function updateReadinessGauges() {
     chronicStart.setDate(now.getDate() - chronicWindowDays);
     
     const sixHoursAgoGauges = new Date(now.getTime() - 6 * 3600 * 1000);
-    const sevenDaysAgo = new Date(now);
-    sevenDaysAgo.setDate(now.getDate() - 7);
+    // Expand acute/fatigue window to 60 days to capture "Slow" decay tracks
+    const sixtyDaysAgo = new Date(now);
+    sixtyDaysAgo.setDate(now.getDate() - 60);
 
     let chronStruct = 0, chronNeuro = 0, chronMet = 0;
-    let acuteStruct = 0, acuteNeuro = 0, acuteMet = 0;
+    
+    // Accumulators for Bi-Exponential tracks
+    let fMeta = 0, sMeta = 0;
+    let fNeuro = 0, sNeuro = 0;
+    let fStruct = 0, sStruct = 0;
 
     allSessions.forEach(s => {
         const d = parseLocalDate(s.date);
@@ -2376,24 +2398,27 @@ function updateReadinessGauges() {
             }
         }
 
-        // Acute Decay (7d)
-        if (d >= sevenDaysAgo) {
-            // Precise time calculation
-            let sessTime;
-            if (s.createdAt) {
-                sessTime = new Date(s.createdAt);
-            } else {
-                // Fallback to midday local time
-                sessTime = parseLocalDate(s.date);
-                sessTime.setHours(12, 0, 0, 0);
-            }
+        // Fatigue Decay (60d window)
+        if (d >= sixtyDaysAgo) {
+            let sessTime = s.createdAt ? new Date(s.createdAt) : parseLocalDate(s.date);
+            if (!s.createdAt) sessTime.setHours(12, 0, 0, 0);
 
             const diffHours = Math.max(0, (now - sessTime) / (1000 * 3600));
             
-            // Half-lives: Met (12h), Neuro (24h), Struct (36h)
-            acuteMet += ch.metabolic * Math.pow(0.5, diffHours / 12);
-            acuteNeuro += ch.neuro * Math.pow(0.5, diffHours / 24);
-            acuteStruct += ch.structural * Math.pow(0.5, diffHours / 36);
+            // Apply Bi-Exponential decay using fatigueTuning
+            const decay = (val, hl) => val * Math.pow(0.5, diffHours / hl);
+
+            // Metabolic
+            fMeta += decay(ch.metabolic * fatigueTuning.meta.partition, fatigueTuning.meta.fastHL);
+            sMeta += decay(ch.metabolic * (1 - fatigueTuning.meta.partition), fatigueTuning.meta.slowHL);
+
+            // Neuro
+            fNeuro += decay(ch.neuro * fatigueTuning.neuro.partition, fatigueTuning.neuro.fastHL);
+            sNeuro += decay(ch.neuro * (1 - fatigueTuning.neuro.partition), fatigueTuning.neuro.slowHL);
+
+            // Structural
+            fStruct += decay(ch.structural * fatigueTuning.struct.partition, fatigueTuning.struct.fastHL);
+            sStruct += decay(ch.structural * (1 - fatigueTuning.struct.partition), fatigueTuning.struct.slowHL);
         }
     });
 
@@ -2402,11 +2427,16 @@ function updateReadinessGauges() {
     const wChronNeuro = Math.max(1, chronNeuro / weeksInChronic);
     const wChronMet = Math.max(1, chronMet / weeksInChronic);
 
-    const calcReady = (acute, weekly) => Math.max(5, Math.round(100 - Math.min(100, (acute / weekly) * 100)));
+    // Helper to calculate percentage of capacity used
+    const getFatiguePct = (val, chronic) => Math.min(45, (val / chronic) * 100); // cap at 45% per track to prevent overflow
 
-    const readyStruct = calcReady(acuteStruct, wChronStruct);
-    const readyNeuro = calcReady(acuteNeuro, wChronNeuro);
-    const readyMet = calcReady(acuteMet, wChronMet);
+    const fs = getFatiguePct(fStruct, wChronStruct), ss = getFatiguePct(sStruct, wChronStruct);
+    const fn = getFatiguePct(fNeuro, wChronNeuro), sn = getFatiguePct(sNeuro, wChronNeuro);
+    const fm = getFatiguePct(fMeta, wChronMet), sm = getFatiguePct(sMeta, wChronMet);
+
+    const readyStruct = Math.max(5, Math.round(100 - (fs + ss)));
+    const readyNeuro = Math.max(5, Math.round(100 - (fn + sn)));
+    const readyMet = Math.max(5, Math.round(100 - (fm + sm)));
 
     const getBarColor = (val, type) => {
         if (val < 40) return 'var(--red-500)';
@@ -2415,22 +2445,27 @@ function updateReadinessGauges() {
         return 'var(--green-400)';
     };
 
-    const renderGauge = (label, val, type) => `
-        <div style="margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 4px; font-weight: 600; color: var(--text-secondary);">
+    const renderGauge = (label, ready, fast, slow, type) => {
+        const color = getBarColor(ready, type);
+        return `
+        <div style="margin-bottom: 16px;">
+            <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 6px; font-weight: 700; color: var(--text-primary);">
                 <span>${label}</span>
-                <span>${val}%</span>
+                <span>${ready}% Readiness</span>
             </div>
-            <div style="height: 8px; background: rgba(255,255,255,0.05); border-radius: 4px; overflow: hidden;">
-                <div style="height: 100%; width: ${val}%; background: ${getBarColor(val, type)}; transition: width 0.6s var(--ease-out);"></div>
+            <div style="height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; display: flex;">
+                <div style="height: 100%; width: ${ready}%; background: ${color}; transition: width 0.6s var(--ease-out);"></div>
+                <div style="height: 100%; width: ${slow}%; background: ${color}; opacity: 0.45; transition: width 0.6s var(--ease-out);" title="Systemic Fatigue"></div>
+                <div style="height: 100%; width: ${fast}%; background: ${color}; opacity: 0.2; transition: width 0.6s var(--ease-out);" title="Acute Fatigue"></div>
             </div>
         </div>
     `;
+    };
 
     container.innerHTML = 
-        renderGauge('Structural (Tissues)', readyStruct, 'struct') +
-        renderGauge('Neuromuscular (Power)', readyNeuro, 'neuro') +
-        renderGauge('Metabolic (Pump)', readyMet, 'met');
+        renderGauge('Structural (Tissues)', readyStruct, fs, ss, 'struct') +
+        renderGauge('Neuromuscular (Power)', readyNeuro, fn, sn, 'neuro') +
+        renderGauge('Metabolic (Pump)', readyMet, fm, sm, 'met');
 }
 
 function drawIntensityChart(sessions, days) {
@@ -2972,6 +3007,13 @@ window.resetSettingsTab = function(tabId) {
     } else if (tabId === 'appearance') {
         themeColor = 'orange';
         updatePreference('themeColor', 'orange');
+    } else if (tabId === 'analytics') {
+        fatigueTuning = {
+            meta: { partition: 0.9, fastHL: 6, slowHL: 48 },
+            neuro: { partition: 0.7, fastHL: 24, slowHL: 192 },
+            struct: { partition: 0.5, fastHL: 36, slowHL: 336 }
+        };
+        updatePreference('fatigueTuning', fatigueTuning);
     }
 
     // Force immediate UI update
@@ -2981,6 +3023,16 @@ window.resetSettingsTab = function(tabId) {
     applyWidgetVisibility();
     applyAccentColor(themeColor);
     
+    // Fatigue Tuning UI sync
+    ['meta', 'neuro', 'struct'].forEach(ch => {
+        const part = document.getElementById(`tuning-${ch}-partition`);
+        const fast = document.getElementById(`tuning-${ch}-fastHL`);
+        const slow = document.getElementById(`tuning-${ch}-slowHL`);
+        if (part) part.value = fatigueTuning[ch].partition * 100;
+        if (fast) fast.value = fatigueTuning[ch].fastHL;
+        if (slow) slow.value = fatigueTuning[ch].slowHL;
+    });
+
     // Force documented days update
     const infoDays = document.getElementById('info-chronic-days');
     if (infoDays) infoDays.textContent = chronicWindowDays;
@@ -3012,6 +3064,25 @@ multInputs.forEach(m => {
         customMultipliers[m.cat][m.key] = val;
         updatePreference('customMultipliers', customMultipliers);
         applyCustomMultipliers();
+    });
+});
+
+// Fatigue Tuning inputs
+['meta', 'neuro', 'struct'].forEach(ch => {
+    $(`#tuning-${ch}-partition`).addEventListener('change', (e) => {
+        fatigueTuning[ch].partition = (parseInt(e.target.value) || 0) / 100;
+        updatePreference('fatigueTuning', fatigueTuning);
+        refreshDashboard();
+    });
+    $(`#tuning-${ch}-fastHL`).addEventListener('change', (e) => {
+        fatigueTuning[ch].fastHL = parseInt(e.target.value) || 1;
+        updatePreference('fatigueTuning', fatigueTuning);
+        refreshDashboard();
+    });
+    $(`#tuning-${ch}-slowHL`).addEventListener('change', (e) => {
+        fatigueTuning[ch].slowHL = parseInt(e.target.value) || 1;
+        updatePreference('fatigueTuning', fatigueTuning);
+        refreshDashboard();
     });
 });
 

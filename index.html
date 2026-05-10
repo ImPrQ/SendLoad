@@ -392,12 +392,12 @@
                 <div class="form-group" id="wall-angle-wrapper">
                     <label>Wall Angle</label>
                     <div class="pill-group" id="wall-angle-group">
-                        <button class="pill-btn" data-value="0.8" id="pill-slab">Slab<span class="pill-sub">×0.8</span></button>
-                        <button class="pill-btn active" data-value="1.0" id="pill-vertical">Vertical<span class="pill-sub">×1.0</span></button>
-                        <button class="pill-btn" data-value="1.2" id="pill-20deg">20°<span class="pill-sub">×1.2</span></button>
-                        <button class="pill-btn" data-value="1.4" id="pill-30deg">30°<span class="pill-sub">×1.4</span></button>
-                        <button class="pill-btn" data-value="1.6" id="pill-40deg">40°<span class="pill-sub">×1.6</span></button>
-                        <button class="pill-btn" data-value="1.8" id="pill-50deg">50°+<span class="pill-sub">×1.8</span></button>
+                        <button class="pill-btn" data-key="slab" data-value="0.8" id="pill-slab">Slab<span class="pill-sub">×0.8</span></button>
+                        <button class="pill-btn active" data-key="vertical" data-value="1.0" id="pill-vertical">Vertical<span class="pill-sub">×1.0</span></button>
+                        <button class="pill-btn" data-key="20deg" data-value="1.2" id="pill-20deg">20°<span class="pill-sub">×1.2</span></button>
+                        <button class="pill-btn" data-key="30deg" data-value="1.4" id="pill-30deg">30°<span class="pill-sub">×1.4</span></button>
+                        <button class="pill-btn" data-key="40deg" data-value="1.6" id="pill-40deg">40°<span class="pill-sub">×1.6</span></button>
+                        <button class="pill-btn" data-key="50deg" data-value="1.8" id="pill-50deg">50°+<span class="pill-sub">×1.8</span></button>
                     </div>
                 </div>
 
@@ -405,11 +405,11 @@
                 <div class="form-group">
                     <label>Rate of Perceived Exertion (RPE)</label>
                     <div class="pill-group" id="rpe-group">
-                        <button class="pill-btn" data-value="0.8" id="pill-rpe5">5<span class="pill-sub">Easy ×0.8</span></button>
-                        <button class="pill-btn active" data-value="1.0" id="pill-rpe6">6<span class="pill-sub">Moderate ×1.0</span></button>
-                        <button class="pill-btn" data-value="1.2" id="pill-rpe7">7<span class="pill-sub">Hard ×1.2</span></button>
-                        <button class="pill-btn" data-value="1.4" id="pill-rpe8">8<span class="pill-sub">Very Hard ×1.4</span></button>
-                        <button class="pill-btn" data-value="1.6" id="pill-rpe9">9+<span class="pill-sub">Max ×1.6</span></button>
+                        <button class="pill-btn" data-key="5" data-value="0.8" id="pill-rpe5">5<span class="pill-sub">Easy ×0.8</span></button>
+                        <button class="pill-btn active" data-key="6" data-value="1.0" id="pill-rpe6">6<span class="pill-sub">Moderate ×1.0</span></button>
+                        <button class="pill-btn" data-key="7" data-value="1.2" id="pill-rpe7">7<span class="pill-sub">Hard ×1.2</span></button>
+                        <button class="pill-btn" data-key="8" data-value="1.4" id="pill-rpe8">8<span class="pill-sub">Very Hard ×1.4</span></button>
+                        <button class="pill-btn" data-key="9" data-value="1.6" id="pill-rpe9">9+<span class="pill-sub">Max ×1.6</span></button>
                     </div>
                     <label style="display: flex; align-items: center; gap: 8px; margin-top: 8px; font-size: 0.8rem; color: var(--text-muted); cursor: pointer;">
                         <input type="checkbox" id="warmup-toggle" style="accent-color: var(--orange-500);">
@@ -421,10 +421,10 @@
                 <div class="form-group" id="power-wrapper">
                     <label>Power Style</label>
                     <div class="pill-group" id="power-group">
-                        <button class="pill-btn active" data-value="1.0" id="pill-static">Static<span class="pill-sub">×1.0</span></button>
-                        <button class="pill-btn" data-value="1.2" id="pill-controlled">Controlled<span class="pill-sub">×1.2</span></button>
-                        <button class="pill-btn" data-value="1.4" id="pill-less-controlled">Less-Ctrl<span class="pill-sub">×1.4</span></button>
-                        <button class="pill-btn" data-value="1.6" id="pill-power">Hands Only<span class="pill-sub">×1.6</span></button>
+                        <button class="pill-btn active" data-key="static" data-value="1.0" id="pill-static">Static<span class="pill-sub">×1.0</span></button>
+                        <button class="pill-btn" data-key="controlled" data-value="1.2" id="pill-controlled">Controlled<span class="pill-sub">×1.2</span></button>
+                        <button class="pill-btn" data-key="less_controlled" data-value="1.4" id="pill-less-controlled">Less-Ctrl<span class="pill-sub">×1.4</span></button>
+                        <button class="pill-btn" data-key="hands_only" data-value="1.6" id="pill-power">Hands Only<span class="pill-sub">×1.6</span></button>
                     </div>
                 </div>
 
@@ -432,9 +432,9 @@
                 <div class="form-group" id="fb-modality-wrapper" style="display:none;">
                     <label>Contraction Type</label>
                     <div class="pill-group" id="fb-modality-group">
-                        <button class="pill-btn active" data-value="1.0" id="pill-fb-overcoming">Overcoming <span class="pill-sub">Pulls ×1.0</span></button>
-                        <button class="pill-btn" data-value="1.2" id="pill-fb-yielding">Yielding <span class="pill-sub">Hangs ×1.2</span></button>
-                        <button class="pill-btn" data-value="1.3" id="pill-fb-rfd">Fast / Dynamic <span class="pill-sub">Explosive ×1.3</span></button>
+                        <button class="pill-btn active" data-key="overcoming" data-value="1.0" id="pill-fb-overcoming">Overcoming <span class="pill-sub">Pulls ×1.0</span></button>
+                        <button class="pill-btn" data-key="yielding" data-value="1.2" id="pill-fb-yielding">Yielding <span class="pill-sub">Hangs ×1.2</span></button>
+                        <button class="pill-btn" data-key="rfd" data-value="1.3" id="pill-fb-rfd">Fast / Dynamic <span class="pill-sub">Explosive ×1.3</span></button>
                     </div>
                 </div>
 
@@ -442,11 +442,11 @@
                 <div class="form-group">
                     <label>Average Hold Type</label>
                     <div class="pill-group" id="hold-group">
-                        <button class="pill-btn" data-value="0.8" id="pill-jugs">Jugs<span class="pill-sub">×0.8</span></button>
-                        <button class="pill-btn active" data-value="1.0" id="pill-slopers">Slopers<span class="pill-sub">×1.0</span></button>
-                        <button class="pill-btn" data-value="1.2" id="pill-edges">20-25mm<span class="pill-sub">×1.2</span></button>
-                        <button class="pill-btn" data-value="1.4" id="pill-small-edges">&lt;15mm<span class="pill-sub">×1.4</span></button>
-                        <button class="pill-btn" data-value="1.6" id="pill-pockets">Pockets<span class="pill-sub">×1.6</span></button>
+                        <button class="pill-btn" data-key="jugs" data-value="0.8" id="pill-jugs">Jugs<span class="pill-sub">×0.8</span></button>
+                        <button class="pill-btn active" data-key="slopers" data-value="1.0" id="pill-slopers">Slopers<span class="pill-sub">×1.0</span></button>
+                        <button class="pill-btn" data-key="edges" data-value="1.2" id="pill-edges">20-25mm<span class="pill-sub">×1.2</span></button>
+                        <button class="pill-btn" data-key="small" data-value="1.4" id="pill-small-edges">&lt;15mm<span class="pill-sub">×1.4</span></button>
+                        <button class="pill-btn" data-key="pockets" data-value="1.6" id="pill-pockets">Pockets<span class="pill-sub">×1.6</span></button>
                     </div>
                 </div>
 
@@ -886,7 +886,7 @@
                     <p>The <strong>Acute:Chronic Workload Ratio (ACWR)</strong> is a world-class methodology for monitoring injury risk and training readiness.</p>
                     <ul>
                         <li><strong>Acute Load:</strong> Your total training load over the last 7 days.</li>
-                        <li><strong>Chronic Load:</strong> Your average weekly training load over the last 28 days (your baseline capacity).</li>
+                        <li><strong>Chronic Load:</strong> Your average weekly training load over the last <span id="info-chronic-days">28</span> days (your baseline capacity).</li>
                     </ul>
                     <p>A ratio between <strong>0.8 and 1.3</strong> is generally considered the "Sweet Spot" for safe performance gains.</p>
                 </section>

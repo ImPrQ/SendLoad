@@ -51,6 +51,49 @@ let customMultipliers = {
 let themeColor = 'orange';
 let defaultLogPreset = 'boulder';
 let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
+
+// ---- Legacy Mapping (for retroactive multiplier support) ----
+const LEGACY_MAPS = {
+    angle: { '0.8': 'slab', '1': 'vertical', '1.0': 'vertical', '1.2': '20deg', '1.4': '30deg', '1.6': '40deg', '1.8': '50deg' },
+    rpe: { '0.8': '5', '1': '6', '1.0': '6', '1.2': '7', '1.4': '8', '1.6': '9' },
+    power: { '1': 'static', '1.0': 'static', '1.2': 'controlled', '1.4': 'less_controlled', '1.6': 'hands_only' },
+    hold: { '0.8': 'jugs', '1': 'slopers', '1.0': 'slopers', '1.2': 'edges', '1.4': 'small', '1.6': 'pockets' }
+};
+
+function recalculateSession(sess) {
+    if (!sess.climbs) return sess;
+    let newTotalLoad = 0;
+    
+    sess.climbs = sess.climbs.map(c => {
+        // Infer keys if missing (legacy data)
+        const aKey = c.angleKey || LEGACY_MAPS.angle[String(c.angle)];
+        const rKey = c.rpeKey || LEGACY_MAPS.rpe[String(c.rpe)];
+        const pKey = c.powerKey || LEGACY_MAPS.power[String(c.power)];
+        const hKey = c.holdKey || LEGACY_MAPS.hold[String(c.hold)];
+
+        // Get current multiplier values from settings
+        const aMult = customMultipliers.angle[aKey] ?? c.angle;
+        const rMult = customMultipliers.rpe[rKey] ?? c.rpe;
+        const pMult = pKey === 'static' ? 1.0 : (pKey === 'controlled' ? 1.2 : (pKey === 'less_controlled' ? 1.4 : 1.6));
+        const hMult = customMultipliers.hold[hKey] ?? c.hold;
+
+        // Recalculate load and channels
+        const load = calculateLoad(c.type, c.moves, aMult, rMult, pMult, hMult);
+        const ch = calculateChannels(c.type, c.moves, aMult, rMult, pMult, hMult);
+        
+        newTotalLoad += load;
+        return { 
+            ...c, 
+            angleKey: aKey, rpeKey: rKey, powerKey: pKey, holdKey: hKey,
+            angle: aMult, rpe: rMult, power: pMult, hold: hMult,
+            load, neuro: ch.neuro, metabolic: ch.metabolic, structural: ch.structural 
+        };
+    });
+
+    sess.totalLoad = newTotalLoad;
+    return sess;
+}
+
 let userTemplates = [];
 let unsubscribeTemplates = null;
 
@@ -67,10 +110,13 @@ onAuthStateChanged(auth, (user) => {
         if (unsubscribeSnapshot) unsubscribeSnapshot();
         
         unsubscribeSnapshot = onSnapshot(collection(db, `users/${user.uid}/sessions`), (snapshot) => {
-            allSessions = [];
+            const rawSessions = [];
             snapshot.forEach((doc) => {
-                allSessions.push({ id: doc.id, ...doc.data() });
+                rawSessions.push({ id: doc.id, ...doc.data() });
             });
+            
+            // Recalculate based on current multipliers (retroactive support)
+            allSessions = rawSessions.map(s => recalculateSession(s));
             
             // Sort descending by creation date
             allSessions.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
@@ -89,11 +135,19 @@ onAuthStateChanged(auth, (user) => {
                 neuroDampener = data.neuroDampener ?? 1.0;
                 metaDampener = data.metaDampener ?? 1.0;
                 structDampener = data.structDampener ?? 1.0;
+                widgetVisibility = data.widgetVisibility || widgetVisibility;
+                customMultipliers = data.customMultipliers || customMultipliers;
+                themeColor = data.themeColor || 'orange';
+                defaultLogPreset = data.defaultLogPreset || 'boulder';
                 
                 // Sync UI inputs
                 const winInp = document.getElementById('setting-chronic-window');
                 if (winInp) winInp.value = chronicWindowDays;
                 
+                // Sync Info tab documentation
+                const infoDays = document.getElementById('info-chronic-days');
+                if (infoDays) infoDays.textContent = chronicWindowDays;
+
                 const r7 = document.getElementById('setting-rest-rpe7');
                 const r8 = document.getElementById('setting-rest-rpe8');
                 const r9 = document.getElementById('setting-rest-rpe9');
@@ -107,6 +161,23 @@ onAuthStateChanged(auth, (user) => {
                 if (nd) nd.value = neuroDampener;
                 if (md) md.value = metaDampener;
                 if (sd) sd.value = structDampener;
+
+                const dPre = document.getElementById('setting-default-preset');
+                if (dPre) dPre.value = defaultLogPreset;
+
+                // Multiplier Inputs
+                syncMultiplierInputs();
+                applyCustomMultipliers();
+                
+                // Widget Toggles
+                syncWidgetToggles();
+                applyWidgetVisibility();
+
+                // Theme
+                applyAccentColor(themeColor);
+
+                // Recalculate sessions locally if multipliers changed (retroactive support)
+                allSessions = allSessions.map(s => recalculateSession(s));
             } else {
                 deloadWeeks = [];
                 chronicWindowDays = 28;
@@ -274,6 +345,7 @@ function switchToView(viewName) {
     if (viewName === 'dashboard') refreshDashboard();
     if (viewName === 'analytics') renderAnalytics();
     if (viewName === 'history') renderHistory();
+    if (viewName === 'settings') showSettingsSection('general');
     if (viewName === 'log' && !editingSessionId) {
         // Reset to new session mode
         $('#log-header-title').textContent = 'Log Climbing Session';
@@ -436,15 +508,27 @@ function getEffectivePower() {
 // ---- Live Preview ----
 function getActivePillValue(groupId) {
     const active = $(`#${groupId} .pill-btn.active`);
-    return active ? parseFloat(active.dataset.value) : 1.0;
+    return {
+        value: active ? parseFloat(active.dataset.value) : 1.0,
+        key: active ? active.dataset.key : null
+    };
+}
+
+function getActivePillKey(groupId) {
+    const active = $(`#${groupId} .pill-btn.active`);
+    return active ? active.dataset.key : null;
 }
 
 function updatePreview() {
     const moves = getEffectiveMoves();
-    const angle = getActivePillValue('wall-angle-group');
-    let rpe = getActivePillValue('rpe-group');
+    const angleData = getActivePillValue('wall-angle-group');
+    const rpeData = getActivePillValue('rpe-group');
     const power = getEffectivePower();
-    const hold = getActivePillValue('hold-group');
+    const holdData = getActivePillValue('hold-group');
+
+    const angle = angleData.value;
+    let rpe = rpeData.value;
+    const hold = holdData.value;
 
     // Warm-up ramp: average RPE from baseline (0.8) to selected RPE
     const warmupToggle = $('#warmup-toggle');
@@ -526,10 +610,16 @@ $('#btn-add-climb').addEventListener('click', () => {
         return;
     }
 
-    const angle = getActivePillValue('wall-angle-group');
-    let rpe = getActivePillValue('rpe-group');
+    const angleData = getActivePillValue('wall-angle-group');
+    const rpeData = getActivePillValue('rpe-group');
+    const powerKey = getActivePillKey('power-group');
+    const holdData = getActivePillValue('hold-group');
+    
+    let angle = angleData.value;
+    let rpe = rpeData.value;
     const power = getEffectivePower();
-    const hold = getActivePillValue('hold-group');
+    const hold = holdData.value;
+    
     const grade = currentClimbType === 'fingerboard' ? '' : $('#climb-grade').value.trim();
     const notes = $('#climb-notes').value.trim();
 
@@ -547,9 +637,13 @@ $('#btn-add-climb').addEventListener('click', () => {
         type: currentClimbType,
         moves,
         angle: currentClimbType === 'fingerboard' ? 1.0 : angle,
+        angleKey: angleData.key,
         rpe,
+        rpeKey: rpeData.key,
         power,
+        powerKey: powerKey,
         hold,
+        holdKey: holdData.key,
         grade,
         notes,
         load,
@@ -2845,6 +2939,17 @@ window.resetSettingsTab = function(tabId) {
         themeColor = 'orange';
         updatePreference('themeColor', 'orange');
     }
+
+    // Force immediate UI update
+    syncMultiplierInputs();
+    applyCustomMultipliers();
+    syncWidgetToggles();
+    applyWidgetVisibility();
+    applyAccentColor(themeColor);
+    
+    // Force documented days update
+    const infoDays = document.getElementById('info-chronic-days');
+    if (infoDays) infoDays.textContent = chronicWindowDays;
 };
 
 // Event Listeners for Multipliers

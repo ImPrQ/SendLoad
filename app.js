@@ -360,7 +360,7 @@ function switchToView(viewName) {
 }
 
 // ---- Info View Logic ----
-window.showInfoSection = function(sectionId) {
+function showInfoSection(sectionId) {
     // Update Tabs
     $$('#info-sidebar .info-tab').forEach(t => {
         t.classList.remove('active');
@@ -380,7 +380,8 @@ window.showInfoSection = function(sectionId) {
     } else {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
-};
+}
+window.showInfoSection = showInfoSection;
 
 // Bind event listeners to info tabs
 $$('#info-sidebar .info-tab').forEach(tab => {
@@ -516,9 +517,9 @@ function getEffectiveMoves() {
 
 function getEffectivePower() {
     if (currentClimbType === 'fingerboard') {
-        return getActivePillValue('fb-modality-group');
+        return getActivePillValue('fb-modality-group').value;
     }
-    return getActivePillValue('power-group');
+    return getActivePillValue('power-group').value;
 }
 
 // ---- Live Preview ----
@@ -2800,7 +2801,7 @@ const exportBtnSettings = document.getElementById('btn-export-settings');
 if (exportBtnSettings) exportBtnSettings.addEventListener('click', handleExport);
 
 // ---- Advanced Customization Logic ----
-window.showSettingsSection = function(sectionId) {
+function showSettingsSection(sectionId) {
     $$('#settings-sidebar .info-tab').forEach(t => {
         t.classList.remove('active');
         if (t.dataset.section === sectionId) {
@@ -2811,7 +2812,8 @@ window.showSettingsSection = function(sectionId) {
     $$('#view-settings .info-section').forEach(s => s.classList.remove('active'));
     const section = $(`#settings-${sectionId}`);
     if (section) section.classList.add('active');
-};
+}
+window.showSettingsSection = showSettingsSection;
 
 // Bind event listeners to settings tabs
 $$('#settings-sidebar .info-tab').forEach(tab => {

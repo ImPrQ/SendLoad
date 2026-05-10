@@ -345,7 +345,10 @@ function switchToView(viewName) {
     if (viewName === 'dashboard') refreshDashboard();
     if (viewName === 'analytics') renderAnalytics();
     if (viewName === 'history') renderHistory();
-    if (viewName === 'settings') showSettingsSection('general');
+    if (viewName === 'settings') {
+        const alreadyInSettings = views.settings.classList.contains('active');
+        if (!alreadyInSettings) showSettingsSection('general');
+    }
     if (viewName === 'log' && !editingSessionId) {
         // Reset to new session mode
         $('#log-header-title').textContent = 'Log Climbing Session';

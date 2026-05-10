@@ -617,89 +617,242 @@
 
     <!-- Settings View -->
     <main id="view-settings" class="view">
-        <div class="log-container">
-            <div class="log-header">
-                <h1>Settings & Preferences</h1>
-                <p class="subtitle">Customize your training parameters and manage your data.</p>
-            </div>
+        <div class="info-container">
+            <aside class="info-sidebar" id="settings-sidebar">
+                <button class="info-tab active" onclick="showSettingsSection('general')">General</button>
+                <button class="info-tab" onclick="showSettingsSection('multipliers')">Multipliers</button>
+                <button class="info-tab" onclick="showSettingsSection('widgets')">Widgets</button>
+                <button class="info-tab" onclick="showSettingsSection('appearance')">Appearance</button>
+                <button class="info-tab" onclick="showSettingsSection('data')">Data & Account</button>
+            </aside>
+            <div class="info-content">
+                <!-- General Settings -->
+                <section id="settings-general" class="info-section active">
+                    <h2>General Preferences</h2>
+                    <div class="form-group">
+                        <label for="setting-chronic-window">Chronic Load Window (Days)</label>
+                        <input type="number" id="setting-chronic-window" class="form-input" min="7" max="90" value="28">
+                        <p class="subtle">Standard is 28 days. A shorter window makes your chronic capacity more reactive.</p>
+                    </div>
 
-            <!-- Preferences -->
-            <div class="session-meta-card">
-                <h2>Training Preferences</h2>
-                <div class="form-group">
-                    <label for="setting-chronic-window">Chronic Load Window (Days)</label>
-                    <input type="number" id="setting-chronic-window" class="form-input" min="7" max="90" value="28">
-                    <p class="subtle">Standard is 28 days. A shorter window makes your chronic capacity more reactive.</p>
-                </div>
-                
-                <div style="margin-top: var(--space-lg);">
-                    <h3 style="font-size: 0.9rem; margin-bottom: var(--space-md); color: var(--text-secondary);">Rest Timer Defaults (Minutes)</h3>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="setting-rest-rpe7">RPE 7</label>
-                            <input type="number" id="setting-rest-rpe7" class="form-input" value="3">
-                        </div>
-                        <div class="form-group">
-                            <label for="setting-rest-rpe8">RPE 8</label>
-                            <input type="number" id="setting-rest-rpe8" class="form-input" value="5">
-                        </div>
-                        <div class="form-group">
-                            <label for="setting-rest-rpe9">RPE 9+</label>
-                            <input type="number" id="setting-rest-rpe9" class="form-input" value="8">
+                    <div style="margin-top: var(--space-lg);">
+                        <h3 style="font-size: 0.9rem; margin-bottom: var(--space-md); color: var(--text-secondary);">Rest Timer Defaults (Minutes)</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="setting-rest-rpe7">RPE 7</label>
+                                <input type="number" id="setting-rest-rpe7" class="form-input" value="3">
+                            </div>
+                            <div class="form-group">
+                                <label for="setting-rest-rpe8">RPE 8</label>
+                                <input type="number" id="setting-rest-rpe8" class="form-input" value="5">
+                            </div>
+                            <div class="form-group">
+                                <label for="setting-rest-rpe9">RPE 9+</label>
+                                <input type="number" id="setting-rest-rpe9" class="form-input" value="8">
+                            </div>
                         </div>
                     </div>
 
-                <div style="margin-top: var(--space-lg);">
-                    <h3 style="font-size: 0.9rem; margin-bottom: var(--space-md); color: var(--text-secondary);">Channel Dampeners</h3>
-                    <p class="subtle" style="margin-bottom: var(--space-sm);">Scale the raw C4HP channel formulas. 1.0 = default. Lower to suppress, raise to amplify.</p>
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="setting-neuro-dampener">Neuro</label>
-                            <input type="number" id="setting-neuro-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+                    <div style="margin-top: var(--space-lg);">
+                        <label for="setting-default-preset">Default Log Preset</label>
+                        <select id="setting-default-preset" class="form-input">
+                            <option value="boulder">Boulder (Default)</option>
+                            <option value="lead">Lead</option>
+                            <option value="fingerboard">Fingerboard</option>
+                            <option value="power">Power Preset</option>
+                            <option value="project">Project Preset</option>
+                            <option value="endurance">Endurance Preset</option>
+                        </select>
+                        <p class="subtle">Select which preset is automatically loaded when you open the Log tab.</p>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-secondary" onclick="resetSettingsTab('general')">Reset to Defaults</button>
+                    </div>
+                </section>
+
+                <!-- Multipliers -->
+                <section id="settings-multipliers" class="info-section">
+                    <h2>Calculation Multipliers</h2>
+                    <p class="subtle" style="margin-bottom: var(--space-lg);">Fine-tune the C4HP engine by overriding the default multipliers for each category.</p>
+                    
+                    <div class="settings-grid">
+                        <div class="multiplier-group">
+                            <h3>Wall Angle</h3>
+                            <div class="form-row-grid">
+                                <div class="form-group"><label>Slab</label><input type="number" step="0.1" id="m-angle-slab" class="form-input" value="0.8"></div>
+                                <div class="form-group"><label>Vertical</label><input type="number" step="0.1" id="m-angle-vertical" class="form-input" value="1.0"></div>
+                                <div class="form-group"><label>20°</label><input type="number" step="0.1" id="m-angle-20" class="form-input" value="1.2"></div>
+                                <div class="form-group"><label>30°</label><input type="number" step="0.1" id="m-angle-30" class="form-input" value="1.4"></div>
+                                <div class="form-group"><label>40°</label><input type="number" step="0.1" id="m-angle-40" class="form-input" value="1.6"></div>
+                                <div class="form-group"><label>50°+</label><input type="number" step="0.1" id="m-angle-50" class="form-input" value="1.8"></div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="setting-meta-dampener">Metabolic</label>
-                            <input type="number" id="setting-meta-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+
+                        <div class="multiplier-group" style="margin-top: var(--space-lg);">
+                            <h3>RPE (Perceived Exertion)</h3>
+                            <div class="form-row-grid">
+                                <div class="form-group"><label>RPE 5</label><input type="number" step="0.1" id="m-rpe-5" class="form-input" value="0.8"></div>
+                                <div class="form-group"><label>RPE 6</label><input type="number" step="0.1" id="m-rpe-6" class="form-input" value="1.0"></div>
+                                <div class="form-group"><label>RPE 7</label><input type="number" step="0.1" id="m-rpe-7" class="form-input" value="1.2"></div>
+                                <div class="form-group"><label>RPE 8</label><input type="number" step="0.1" id="m-rpe-8" class="form-input" value="1.4"></div>
+                                <div class="form-group"><label>RPE 9+</label><input type="number" step="0.1" id="m-rpe-9" class="form-input" value="1.6"></div>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label for="setting-struct-dampener">Structural</label>
-                            <input type="number" id="setting-struct-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+
+                        <div class="multiplier-group" style="margin-top: var(--space-lg);">
+                            <h3>Hold Type</h3>
+                            <div class="form-row-grid">
+                                <div class="form-group"><label>Jugs</label><input type="number" step="0.1" id="m-hold-jugs" class="form-input" value="0.8"></div>
+                                <div class="form-group"><label>Slopers</label><input type="number" step="0.1" id="m-hold-slopers" class="form-input" value="1.0"></div>
+                                <div class="form-group"><label>20-25mm</label><input type="number" step="0.1" id="m-hold-edges" class="form-input" value="1.2"></div>
+                                <div class="form-group"><label>&lt;15mm</label><input type="number" step="0.1" id="m-hold-small" class="form-input" value="1.4"></div>
+                                <div class="form-group"><label>Pockets</label><input type="number" step="0.1" id="m-hold-pockets" class="form-input" value="1.6"></div>
+                            </div>
                         </div>
                     </div>
-                </div>
-            </div>
 
-            <!-- Data Management -->
-            <div class="session-meta-card">
-                <h2>Data Management</h2>
-                <p class="subtle" style="margin-bottom: var(--space-md);">Backup your data or import history from a JSON file.</p>
-                <div style="display: flex; gap: var(--space-md);">
-                    <button class="btn-outline" style="flex:1;" onclick="document.getElementById('import-file').click()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-                        Import JSON
-                    </button>
-                    <input type="file" id="import-file" accept=".json" style="display:none;">
-                    <button class="btn-outline" style="flex:1;" id="btn-export-settings">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                        Export JSON
-                    </button>
-                </div>
-            </div>
+                    <div style="margin-top: var(--space-xl);">
+                        <h3>Channel Dampeners</h3>
+                        <p class="subtle" style="margin-bottom: var(--space-sm);">Scale the raw Stress Channel formulas (Neuro, Metabolic, Structural).</p>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="setting-neuro-dampener">Neuro</label>
+                                <input type="number" id="setting-neuro-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="setting-meta-dampener">Metabolic</label>
+                                <input type="number" id="setting-meta-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+                            </div>
+                            <div class="form-group">
+                                <label for="setting-struct-dampener">Structural</label>
+                                <input type="number" id="setting-struct-dampener" class="form-input" min="0.1" max="2.0" step="0.1" value="1.0">
+                            </div>
+                        </div>
+                    </div>
 
-            <!-- Account & Danger Zone -->
-            <div class="session-meta-card" style="border-color: rgba(239, 68, 68, 0.3);">
-                <h2 style="color: var(--red-500);">Danger Zone</h2>
-                <p class="subtle" style="margin-bottom: var(--space-md);">Manage your account or permanently delete your training history.</p>
-                <div style="display: flex; flex-direction: column; gap: var(--space-md);">
-                    <button class="btn-outline" onclick="signOutUser()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
-                        Sign Out
-                    </button>
-                    <button class="btn-danger-fill" onclick="window.handleWipeData()">
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
-                        Wipe All Data (Irreversible)
-                    </button>
-                </div>
+                    <div class="settings-actions">
+                        <button class="btn-secondary" onclick="resetSettingsTab('multipliers')">Reset to Defaults</button>
+                    </div>
+                </section>
+
+                <!-- Widgets -->
+                <section id="settings-widgets" class="info-section">
+                    <h2>Widget Visibility</h2>
+                    <p class="subtle">Toggle which figures and charts appear on your Dashboard and Analytics pages.</p>
+                    
+                    <div class="toggle-list" style="margin-top: var(--space-lg);">
+                        <div class="toggle-item">
+                            <span>Weekly Load Trend</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-weekly" checked onchange="updateWidgetVisibility('weekly', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Polarization Profile</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-polarization" checked onchange="updateWidgetVisibility('polarization', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Grade Pyramids</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-pyramids" checked onchange="updateWidgetVisibility('pyramids', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Average Modifiers</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-modifiers" checked onchange="updateWidgetVisibility('modifiers', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Velocity Tracker (Analytics)</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-velocity" checked onchange="updateWidgetVisibility('velocity', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Intensity per Move (Analytics)</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-intensity" checked onchange="updateWidgetVisibility('intensity', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <div class="toggle-item">
+                            <span>Performance Correlator (Analytics)</span>
+                            <label class="switch small">
+                                <input type="checkbox" id="w-show-correlator" checked onchange="updateWidgetVisibility('correlator', this.checked)">
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-secondary" onclick="resetSettingsTab('widgets')">Reset to Defaults</button>
+                    </div>
+                </section>
+
+                <!-- Appearance -->
+                <section id="settings-appearance" class="info-section">
+                    <h2>Appearance</h2>
+                    <p class="subtle">Customize the look and feel of SendLoad.</p>
+
+                    <div style="margin-top: var(--space-lg);">
+                        <label>Accent Color</label>
+                        <div class="color-presets" id="theme-color-presets">
+                            <button class="color-btn active" data-theme="orange" style="background: #f97316;" title="Orange (Default)"></button>
+                            <button class="color-btn" data-theme="blue" style="background: #3b82f6;" title="Blue"></button>
+                            <button class="color-btn" data-theme="green" style="background: #22c55e;" title="Green"></button>
+                            <button class="color-btn" data-theme="purple" style="background: #a855f7;" title="Purple"></button>
+                            <button class="color-btn" data-theme="pink" style="background: #ec4899;" title="Pink"></button>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-secondary" onclick="resetSettingsTab('appearance')">Reset to Defaults</button>
+                    </div>
+                </section>
+
+                <!-- Data & Account -->
+                <section id="settings-data" class="info-section">
+                    <h2>Data & Account</h2>
+                    
+                    <div class="session-meta-card" style="margin-bottom: var(--space-lg);">
+                        <h3>Import / Export</h3>
+                        <p class="subtle" style="margin-bottom: var(--space-md);">Backup your data or import history from a JSON file.</p>
+                        <div style="display: flex; gap: var(--space-md);">
+                            <button class="btn-outline" style="flex:1;" onclick="document.getElementById('import-file').click()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Import JSON
+                            </button>
+                            <input type="file" id="import-file" accept=".json" style="display:none;">
+                            <button class="btn-outline" style="flex:1;" id="btn-export-settings">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                Export JSON
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="session-meta-card" style="border-color: rgba(239, 68, 68, 0.3);">
+                        <h3 style="color: var(--red-500);">Danger Zone</h3>
+                        <div style="display: flex; flex-direction: column; gap: var(--space-md);">
+                            <button class="btn-outline" onclick="signOutUser()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+                                Sign Out
+                            </button>
+                            <button class="btn-danger-fill" onclick="window.handleWipeData()">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px; height:16px;"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                                Wipe All Data (Irreversible)
+                            </button>
+                        </div>
+                    </div>
+                </section>
             </div>
         </div>
     </main>

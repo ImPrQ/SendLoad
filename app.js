@@ -39,6 +39,17 @@ let chronicWindowDays = 28;
 let restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
 let activeWeeklyChannels = { neuro: true, metabolic: true, structural: true };
 let neuroDampener = 1.0, metaDampener = 1.0, structDampener = 1.0;
+let widgetVisibility = {
+    weekly: true, polarization: true, pyramids: true, modifiers: true,
+    velocity: true, intensity: true, correlator: true
+};
+let customMultipliers = {
+    angle: { slab: 0.8, vertical: 1.0, '20deg': 1.2, '30deg': 1.4, '40deg': 1.6, '50deg': 1.8 },
+    rpe: { 5: 0.8, 6: 1.0, 7: 1.2, 8: 1.4, 9: 1.6 },
+    hold: { jugs: 0.8, slopers: 1.0, edges: 1.2, small: 1.4, pockets: 1.6 }
+};
+let themeColor = 'orange';
+let defaultLogPreset = 'boulder';
 let weekStripOffset = 0; // 0 = current week, -1 = last week, etc.
 let userTemplates = [];
 let unsubscribeTemplates = null;
@@ -142,19 +153,19 @@ onAuthStateChanged(auth, (user) => {
 });
 
 // ---- C4HP Climbing Load Calculator ----
-const ANGLE_LABELS = {
+let ANGLE_LABELS = {
     '0.8': 'Slab', '1': 'Vertical', '1.0': 'Vertical',
     '1.2': '20°', '1.4': '30°', '1.6': '40°', '1.8': '50°+'
 };
-const RPE_LABELS = {
+let RPE_LABELS = {
     '0.8': 'RPE 5', '1': 'RPE 6', '1.0': 'RPE 6',
     '1.2': 'RPE 7', '1.4': 'RPE 8', '1.6': 'RPE 9+'
 };
-const POWER_LABELS = {
+let POWER_LABELS = {
     '1': 'Static', '1.0': 'Static',
     '1.2': 'Controlled', '1.4': 'Less-Ctrl', '1.6': 'Hands Only'
 };
-const HOLD_LABELS = {
+let HOLD_LABELS = {
     '0.8': 'Jugs', '1': 'Slopers', '1.0': 'Slopers',
     '1.2': '20-25mm', '1.4': '<15mm', '1.6': 'Pockets'
 };
@@ -474,18 +485,24 @@ function resetLogForm() {
     $('#climb-notes').value = '';
     setDefaultDate();
 
-    // Reset toggles to boulder
-    climbTypeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-    $('#toggle-boulder').classList.add('active');
-    onClimbTypeChange('boulder');
+    // Apply default preset
+    if (defaultLogPreset === 'power') applyTemplateToForm('boulder', 6, '1.6', '1.6', '1.2', '1.0');
+    else if (defaultLogPreset === 'project') applyTemplateToForm('boulder', 4, '1.6', '1.6', '1.6', '1.2');
+    else if (defaultLogPreset === 'endurance') applyTemplateToForm('lead', 35, '1.0', '1.2', '1.0', '0.8');
+    else if (defaultLogPreset === 'fingerboard') applyTemplateToForm('fingerboard', 0, '1.0', '1.4', '1.2', '1.6', 0, 30);
+    else {
+        // Default (Boulder)
+        climbTypeToggle.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+        $('#toggle-boulder').classList.add('active');
+        onClimbTypeChange('boulder');
 
-    // Reset all pill groups to defaults
-    resetPillGroup('wall-angle-group', '1.0');
-    resetPillGroup('rpe-group', '1.0');
-    resetPillGroup('power-group', '1.0');
-    resetPillGroup('hold-group', '1.0');
+        resetPillGroup('wall-angle-group', '1.0');
+        resetPillGroup('rpe-group', '1.0');
+        resetPillGroup('power-group', '1.0');
+        resetPillGroup('hold-group', '1.0');
+        movesInput.value = 8;
+    }
 
-    movesInput.value = 8;
     editingSessionId = null;
     $('#log-header-title').textContent = 'Log Climbing Session';
     $('#log-header-subtitle').textContent = 'Add climbs to your session and calculate your total training load.';
@@ -2671,3 +2688,205 @@ const handleExport = () => {
 // Bind export to the Settings view button
 const exportBtnSettings = document.getElementById('btn-export-settings');
 if (exportBtnSettings) exportBtnSettings.addEventListener('click', handleExport);
+
+// ---- Advanced Customization Logic ----
+window.showSettingsSection = function(sectionId) {
+    $$('#settings-sidebar .info-tab').forEach(t => t.classList.remove('active'));
+    const activeTab = Array.from($$('#settings-sidebar .info-tab')).find(t => t.getAttribute('onclick').includes(`'${sectionId}'`));
+    if (activeTab) activeTab.classList.add('active');
+
+    $$('#view-settings .info-section').forEach(s => s.classList.remove('active'));
+    const section = $(`#settings-${sectionId}`);
+    if (section) section.classList.add('active');
+};
+
+function syncMultiplierInputs() {
+    // Angle
+    $('#m-angle-slab').value = customMultipliers.angle.slab;
+    $('#m-angle-vertical').value = customMultipliers.angle.vertical;
+    $('#m-angle-20').value = customMultipliers.angle['20deg'];
+    $('#m-angle-30').value = customMultipliers.angle['30deg'];
+    $('#m-angle-40').value = customMultipliers.angle['40deg'];
+    $('#m-angle-50').value = customMultipliers.angle['50deg'];
+
+    // RPE
+    $('#m-rpe-5').value = customMultipliers.rpe[5];
+    $('#m-rpe-6').value = customMultipliers.rpe[6];
+    $('#m-rpe-7').value = customMultipliers.rpe[7];
+    $('#m-rpe-8').value = customMultipliers.rpe[8];
+    $('#m-rpe-9').value = customMultipliers.rpe[9];
+
+    // Hold
+    $('#m-hold-jugs').value = customMultipliers.hold.jugs;
+    $('#m-hold-slopers').value = customMultipliers.hold.slopers;
+    $('#m-hold-edges').value = customMultipliers.hold.edges;
+    $('#m-hold-small').value = customMultipliers.hold.small;
+    $('#m-hold-pockets').value = customMultipliers.hold.pockets;
+}
+
+function applyCustomMultipliers() {
+    // Update Log View Pill Buttons
+    const updates = [
+        { id: 'pill-slab', val: customMultipliers.angle.slab },
+        { id: 'pill-vertical', val: customMultipliers.angle.vertical },
+        { id: 'pill-20deg', val: customMultipliers.angle['20deg'] },
+        { id: 'pill-30deg', val: customMultipliers.angle['30deg'] },
+        { id: 'pill-40deg', val: customMultipliers.angle['40deg'] },
+        { id: 'pill-50deg', val: customMultipliers.angle['50deg'] },
+
+        { id: 'pill-rpe5', val: customMultipliers.rpe[5] },
+        { id: 'pill-rpe6', val: customMultipliers.rpe[6] },
+        { id: 'pill-rpe7', val: customMultipliers.rpe[7] },
+        { id: 'pill-rpe8', val: customMultipliers.rpe[8] },
+        { id: 'pill-rpe9', val: customMultipliers.rpe[9] },
+
+        { id: 'pill-jugs', val: customMultipliers.hold.jugs },
+        { id: 'pill-slopers', val: customMultipliers.hold.slopers },
+        { id: 'pill-edges', val: customMultipliers.hold.edges },
+        { id: 'pill-small-edges', val: customMultipliers.hold.small },
+        { id: 'pill-pockets', val: customMultipliers.hold.pockets }
+    ];
+
+    updates.forEach(upd => {
+        const btn = $(`#${upd.id}`);
+        if (btn) {
+            btn.dataset.value = upd.val;
+            const sub = btn.querySelector('.pill-sub');
+            if (sub) sub.textContent = (sub.textContent.includes('×') ? sub.textContent.split('×')[0] + '×' : '×') + upd.val;
+        }
+    });
+
+    updatePreview();
+}
+
+function syncWidgetToggles() {
+    $('#w-show-weekly').checked = widgetVisibility.weekly;
+    $('#w-show-polarization').checked = widgetVisibility.polarization;
+    $('#w-show-pyramids').checked = widgetVisibility.pyramids;
+    $('#w-show-modifiers').checked = widgetVisibility.modifiers;
+    $('#w-show-velocity').checked = widgetVisibility.velocity;
+    $('#w-show-intensity').checked = widgetVisibility.intensity;
+    $('#w-show-correlator').checked = widgetVisibility.correlator;
+}
+
+window.updateWidgetVisibility = function(key, isVisible) {
+    widgetVisibility[key] = isVisible;
+    updatePreference('widgetVisibility', widgetVisibility);
+    applyWidgetVisibility();
+};
+
+function applyWidgetVisibility() {
+    const map = {
+        weekly: '#chart-weekly',
+        polarization: '#card-intensity-histogram',
+        pyramids: '#card-pyramids',
+        modifiers: '#chart-modifiers',
+        velocity: '#view-analytics .chart-card:nth-of-type(1)',
+        intensity: '#view-analytics .chart-card:nth-of-type(2)',
+        correlator: '#view-analytics .chart-card:nth-of-type(3)'
+    };
+
+    Object.keys(map).forEach(key => {
+        const el = $(map[key]);
+        if (el) el.style.display = widgetVisibility[key] ? 'block' : 'none';
+    });
+}
+
+function applyAccentColor(theme) {
+    themeColor = theme;
+    const root = document.documentElement;
+    const themes = {
+        orange: { main: '#f97316', hover: '#ea580c', bg: 'rgba(249, 115, 22, 0.1)' },
+        blue: { main: '#3b82f6', hover: '#2563eb', bg: 'rgba(59, 130, 246, 0.1)' },
+        green: { main: '#22c55e', hover: '#16a34a', bg: 'rgba(34, 197, 94, 0.1)' },
+        purple: { main: '#a855f7', hover: '#9333ea', bg: 'rgba(168, 85, 247, 0.1)' },
+        pink: { main: '#ec4899', hover: '#db2777', bg: 'rgba(236, 72, 153, 0.1)' }
+    };
+
+    const colors = themes[theme] || themes.orange;
+    root.style.setProperty('--orange-400', colors.main);
+    root.style.setProperty('--orange-500', colors.main);
+    root.style.setProperty('--orange-600', colors.hover);
+    
+    // Update active state on color buttons
+    $$('.color-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.theme === theme);
+    });
+}
+
+window.resetSettingsTab = function(tabId) {
+    if (!confirm(`Reset all ${tabId} settings to defaults?`)) return;
+
+    if (tabId === 'general') {
+        chronicWindowDays = 28;
+        restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
+        defaultLogPreset = 'boulder';
+        updatePreference('chronicWindowDays', 28);
+        updatePreference('restTimerDefaults', restTimerDefaults);
+        updatePreference('defaultLogPreset', 'boulder');
+    } else if (tabId === 'multipliers') {
+        customMultipliers = {
+            angle: { slab: 0.8, vertical: 1.0, '20deg': 1.2, '30deg': 1.4, '40deg': 1.6, '50deg': 1.8 },
+            rpe: { 5: 0.8, 6: 1.0, 7: 1.2, 8: 1.4, 9: 1.6 },
+            hold: { jugs: 0.8, slopers: 1.0, edges: 1.2, small: 1.4, pockets: 1.6 }
+        };
+        neuroDampener = 1.0; metaDampener = 1.0; structDampener = 1.0;
+        updatePreference('customMultipliers', customMultipliers);
+        updatePreference('neuroDampener', 1.0);
+        updatePreference('metaDampener', 1.0);
+        updatePreference('structDampener', 1.0);
+    } else if (tabId === 'widgets') {
+        widgetVisibility = {
+            weekly: true, polarization: true, pyramids: true, modifiers: true,
+            velocity: true, intensity: true, correlator: true
+        };
+        updatePreference('widgetVisibility', widgetVisibility);
+    } else if (tabId === 'appearance') {
+        themeColor = 'orange';
+        updatePreference('themeColor', 'orange');
+    }
+};
+
+// Event Listeners for Multipliers
+const multInputs = [
+    { id: 'm-angle-slab', cat: 'angle', key: 'slab' },
+    { id: 'm-angle-vertical', cat: 'angle', key: 'vertical' },
+    { id: 'm-angle-20', cat: 'angle', key: '20deg' },
+    { id: 'm-angle-30', cat: 'angle', key: '30deg' },
+    { id: 'm-angle-40', cat: 'angle', key: '40deg' },
+    { id: 'm-angle-50', cat: 'angle', key: '50deg' },
+    { id: 'm-rpe-5', cat: 'rpe', key: 5 },
+    { id: 'm-rpe-6', cat: 'rpe', key: 6 },
+    { id: 'm-rpe-7', cat: 'rpe', key: 7 },
+    { id: 'm-rpe-8', cat: 'rpe', key: 8 },
+    { id: 'm-rpe-9', cat: 'rpe', key: 9 },
+    { id: 'm-hold-jugs', cat: 'hold', key: 'jugs' },
+    { id: 'm-hold-slopers', cat: 'hold', key: 'slopers' },
+    { id: 'm-hold-edges', cat: 'hold', key: 'edges' },
+    { id: 'm-hold-small', cat: 'hold', key: 'small' },
+    { id: 'm-hold-pockets', cat: 'hold', key: 'pockets' }
+];
+
+multInputs.forEach(m => {
+    $(`#${m.id}`).addEventListener('change', (e) => {
+        const val = parseFloat(e.target.value) || 1.0;
+        customMultipliers[m.cat][m.key] = val;
+        updatePreference('customMultipliers', customMultipliers);
+        applyCustomMultipliers();
+    });
+});
+
+// Theme Colors
+$('#theme-color-presets').addEventListener('click', (e) => {
+    const btn = e.target.closest('.color-btn');
+    if (btn) {
+        const theme = btn.dataset.theme;
+        updatePreference('themeColor', theme);
+        applyAccentColor(theme);
+    }
+});
+
+// Default Preset
+$('#setting-default-preset').addEventListener('change', (e) => {
+    updatePreference('defaultLogPreset', e.target.value);
+});

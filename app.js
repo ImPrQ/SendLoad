@@ -38,6 +38,7 @@ let deloadWeeks = [];
 let chronicWindowDays = 28;
 let restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
 let activeWeeklyChannels = { neuro: true, metabolic: true, structural: true };
+let activeModifiers = { angle: true, rpe: true, power: true, hold: true };
 let neuroDampener = 1.0, metaDampener = 1.0, structDampener = 1.0;
 let widgetVisibility = {
     weekly: true, polarization: true, pyramids: true, modifiers: true,
@@ -1474,7 +1475,7 @@ function drawModifiersChart() {
     const allVals = [];
     weeks.forEach(w => {
         ['angle', 'rpe', 'power', 'hold'].forEach(k => {
-            if (w[k] !== null) allVals.push(w[k]);
+            if (activeModifiers[k] && w[k] !== null) allVals.push(w[k]);
         });
     });
 
@@ -1541,6 +1542,7 @@ function drawModifiersChart() {
     ];
 
     series.forEach(s => {
+        if (!activeModifiers[s.key]) return;
         const points = [];
         weeks.forEach((w, i) => {
             if (w[s.key] !== null) {
@@ -1586,6 +1588,16 @@ function drawModifiersChart() {
         });
     });
 }
+
+// Interactive legend toggles for modifiers
+document.querySelectorAll('#chart-modifiers .legend-item[data-modifier]').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const mod = btn.dataset.modifier;
+        activeModifiers[mod] = !activeModifiers[mod];
+        btn.classList.toggle('active');
+        drawModifiersChart();
+    });
+});
 
 function roundedRect(ctx, x, y, w, h, r) {
     if (h < 1) return;

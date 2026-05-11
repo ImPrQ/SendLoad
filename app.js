@@ -292,7 +292,8 @@ function calculateChannels(type, moves, angle, rpe, power, hold) {
     const metabolic = (baseMoves * rpe * (2.0 - rpe)) * metaDampener;
 
     // Structural: tendon/pulley stress from small holds + dynamic movement
-    const structural = (baseMoves * hold * power) * structDampener;
+    // Uses sqrt(angle) because tendon stress doesn't increase as aggressively as neuro recruitment on steep terrain.
+    const structural = (baseMoves * Math.sqrt(effectiveAngle) * rpe * hold * power) * structDampener;
 
     return {
         neuro: Math.round(neuro * 10) / 10,
@@ -2373,9 +2374,11 @@ function updateReadinessGauges() {
     chronicStart.setDate(now.getDate() - chronicWindowDays);
     
     const sixHoursAgoGauges = new Date(now.getTime() - 6 * 3600 * 1000);
-    // Expand acute/fatigue window to 60 days to capture "Slow" decay tracks
-    const sixtyDaysAgo = new Date(now);
-    sixtyDaysAgo.setDate(now.getDate() - 60);
+    // Expand fatigue window to at least 60 days OR 2x the chronic window
+    // to ensure we capture all residual "Slow Track" decay.
+    const fatigueWindowDays = Math.max(60, chronicWindowDays * 2);
+    const fatigueStart = new Date(now);
+    fatigueStart.setDate(now.getDate() - fatigueWindowDays);
 
     let chronStruct = 0, chronNeuro = 0, chronMet = 0;
     
@@ -2398,8 +2401,8 @@ function updateReadinessGauges() {
             }
         }
 
-        // Fatigue Decay (60d window)
-        if (d >= sixtyDaysAgo) {
+        // Fatigue Decay
+        if (d >= fatigueStart) {
             let sessTime = s.createdAt ? new Date(s.createdAt) : parseLocalDate(s.date);
             if (!s.createdAt) sessTime.setHours(12, 0, 0, 0);
 
@@ -2427,16 +2430,33 @@ function updateReadinessGauges() {
     const wChronNeuro = Math.max(1, chronNeuro / weeksInChronic);
     const wChronMet = Math.max(1, chronMet / weeksInChronic);
 
-    // Helper to calculate percentage of capacity used
-    const getFatiguePct = (val, chronic) => Math.min(45, (val / chronic) * 100); // cap at 45% per track to prevent overflow
+    // Calculate percentage of capacity used, dynamically scaling to prevent overflow.
+    // We normalize the exponentially decayed sum into a "Weekly Equivalent Load"
+    // by multiplying by (168 * ln(2) / HL). We then scale by 50 (not 100) because
+    // at steady-state (training exactly at chronic rate), total fatigue should equal
+    // 50%, yielding 50% readiness — the correct equilibrium point.
+    const getFatiguePct = (f, fHL, s, sHL, chronic) => {
+        const normFactor = hl => (168 * Math.LN2) / hl;
+        let fPct = ((f * normFactor(fHL)) / chronic) * 50;
+        let sPct = ((s * normFactor(sHL)) / chronic) * 50;
+        let total = fPct + sPct;
+        
+        if (total > 95) {
+            // Scale them down so total fatigue doesn't exceed 95% (ensuring at least 5% readiness)
+            const scale = 95 / total;
+            fPct *= scale;
+            sPct *= scale;
+        }
+        return { fPct, sPct, totalPct: fPct + sPct };
+    };
 
-    const fs = getFatiguePct(fStruct, wChronStruct), ss = getFatiguePct(sStruct, wChronStruct);
-    const fn = getFatiguePct(fNeuro, wChronNeuro), sn = getFatiguePct(sNeuro, wChronNeuro);
-    const fm = getFatiguePct(fMeta, wChronMet), sm = getFatiguePct(sMeta, wChronMet);
+    const structF = getFatiguePct(fStruct, fatigueTuning.struct.fastHL, sStruct, fatigueTuning.struct.slowHL, wChronStruct);
+    const neuroF = getFatiguePct(fNeuro, fatigueTuning.neuro.fastHL, sNeuro, fatigueTuning.neuro.slowHL, wChronNeuro);
+    const metF = getFatiguePct(fMeta, fatigueTuning.meta.fastHL, sMeta, fatigueTuning.meta.slowHL, wChronMet);
 
-    const readyStruct = Math.max(5, Math.round(100 - (fs + ss)));
-    const readyNeuro = Math.max(5, Math.round(100 - (fn + sn)));
-    const readyMet = Math.max(5, Math.round(100 - (fm + sm)));
+    const readyStruct = Math.max(5, Math.round(100 - structF.totalPct));
+    const readyNeuro = Math.max(5, Math.round(100 - neuroF.totalPct));
+    const readyMet = Math.max(5, Math.round(100 - metF.totalPct));
 
     const getBarColor = (val, type) => {
         if (val < 40) return 'var(--red-500)';
@@ -2447,6 +2467,8 @@ function updateReadinessGauges() {
 
     const renderGauge = (label, ready, fast, slow, type) => {
         const color = getBarColor(ready, type);
+        const separator = `border-right: 1px solid var(--bg-card);`;
+        
         return `
         <div style="margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 6px; font-weight: 700; color: var(--text-primary);">
@@ -2454,18 +2476,18 @@ function updateReadinessGauges() {
                 <span>${ready}% Readiness</span>
             </div>
             <div style="height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; display: flex;">
-                <div style="height: 100%; width: ${ready}%; background: ${color}; transition: width 0.6s var(--ease-out);"></div>
-                <div style="height: 100%; width: ${slow}%; background: ${color}; opacity: 0.45; transition: width 0.6s var(--ease-out);" title="Systemic Fatigue"></div>
-                <div style="height: 100%; width: ${fast}%; background: ${color}; opacity: 0.2; transition: width 0.6s var(--ease-out);" title="Acute Fatigue"></div>
+                <div style="height: 100%; width: ${ready}%; background: ${color}; transition: width 0.6s var(--ease-out); ${ready > 0 ? separator : ''}"></div>
+                <div style="height: 100%; width: ${slow}%; background: repeating-linear-gradient(45deg, ${color} 0, ${color} 4px, transparent 4px, transparent 8px); opacity: 0.4; transition: width 0.6s var(--ease-out); ${slow > 0 ? separator : ''}" title="Systemic Fatigue"></div>
+                <div style="height: 100%; width: calc(100% - ${ready}% - ${slow}%); background: ${color}; opacity: 0.35; transition: width 0.6s var(--ease-out);" title="Acute Fatigue"></div>
             </div>
         </div>
     `;
     };
 
     container.innerHTML = 
-        renderGauge('Structural (Tissues)', readyStruct, fs, ss, 'struct') +
-        renderGauge('Neuromuscular (Power)', readyNeuro, fn, sn, 'neuro') +
-        renderGauge('Metabolic (Pump)', readyMet, fm, sm, 'met');
+        renderGauge('Structural (Tissues)', readyStruct, structF.fPct, structF.sPct, 'struct') +
+        renderGauge('Neuromuscular (Power)', readyNeuro, neuroF.fPct, neuroF.sPct, 'neuro') +
+        renderGauge('Metabolic (Pump)', readyMet, metF.fPct, metF.sPct, 'met');
 }
 
 function drawIntensityChart(sessions, days) {

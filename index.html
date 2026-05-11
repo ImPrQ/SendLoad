@@ -975,8 +975,39 @@
                 </section>
                 <section id="info-readiness" class="info-section">
                     <h2>Project Readiness</h2>
-                    <p>This gauge tracks your <strong>Fatigue Decay</strong>. It estimates how recovered you are based on the intensity and timing of your recent sessions.</p>
-                    <p>Higher readiness indicates you are fresh and ready for high-intensity "project" attempts, while low readiness suggests you should focus on recovery or low-intensity volume.</p>
+                    <p>This gauge tracks your <strong>Fatigue Decay</strong>. It estimates how recovered you are based on the intensity and timing of your recent sessions, utilizing a <strong>Bi-Exponential Decay Model</strong> inspired by Banister's impulse-response theory.</p>
+                    <p>Every training stimulus is partitioned into two distinct fatigue tracks:</p>
+                    <ul>
+                        <li><strong>Acute Fatigue (Fast Track):</strong> Represents short-term peripheral fatigue. Decays quickly (e.g., 24-36h half-life). Represented by the solid low-opacity bar.</li>
+                        <li><strong>Systemic Fatigue (Slow Track):</strong> Represents long-term central and tissue fatigue. Decays slowly (e.g., 1-2 week half-life). Represented by the striped/dashed bar.</li>
+                    </ul>
+                    <h3 style="font-size: 0.9rem; margin: 12px 0 8px;">The Math</h3>
+                    <p style="margin-bottom: 8px;">Fatigue is continuously calculated using an exponentially decaying sum for all sessions in the last 60 days:</p>
+                    <div style="background: var(--bg-hover); padding: 12px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 12px; color: var(--text-main);">
+                        DecayedLoad = Σ ( SessionLoad × 0.5<sup>(Δt / HalfLife)</sup> )
+                    </div>
+                    <p style="margin-bottom: 8px;">To compare this exponential sum to your 28-day Chronic Weekly Capacity (<em>W</em>), we normalize it into a "Weekly Equivalent Load" by multiplying by a factor that calculates the area under the exponential decay curve:</p>
+                    <div style="background: var(--bg-hover); padding: 12px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 12px; color: var(--text-main);">
+                        NormalizedLoad = DecayedLoad × (168 × ln(2) / HalfLife)<br><br>
+                        Fatigue % = (NormalizedLoad / W) × 50<br><br>
+                        Readiness = 100% - Total Fatigue %
+                    </div>
+                    <p><em>Note: We scale the percentage by 50 so that at steady-state (training exactly at your chronic average), your readiness rests in a state of equilibrium at 50%, reflecting a productive state of physiological adaptation rather than being completely drained.</em></p>
+                    
+                    <h3 style="font-size: 0.9rem; margin: 16px 0 8px;">Partitioning & Example</h3>
+                    <p style="margin-bottom: 8px;">Different physiological stresses leave different long-term traces. When a climb generates CLU, that load is distributed into the fast/slow tracks based on its category:</p>
+                    <ul style="margin-bottom: 12px;">
+                        <li><strong>Metabolic:</strong> 90% Acute / 10% Systemic (muscle pump recovers quickly).</li>
+                        <li><strong>Neuromuscular:</strong> 70% Acute / 30% Systemic (CNS takes moderate time to recover).</li>
+                        <li><strong>Structural:</strong> 50% Acute / 50% Systemic (tendon and pulley remodeling is a very slow process).</li>
+                    </ul>
+                    <div style="background: rgba(74, 222, 128, 0.1); border-left: 3px solid var(--green-500); padding: 12px; border-radius: var(--radius-sm); font-size: 0.85rem; color: var(--text-main);">
+                        <strong>Example (Structural Load):</strong><br>
+                        If a hard crimpy boulder generates <strong>100 Structural CLU</strong>:<br>
+                        <br>
+                        • <strong>50 CLU</strong> goes to the <em>Fast Track</em> (Acute), decaying with a ~36-hour half-life. This tracks immediate joint stiffness and localized inflammation.<br>
+                        • <strong>50 CLU</strong> goes to the <em>Slow Track</em> (Systemic), decaying with a ~14-day (336-hour) half-life. This tracks the deep, slow accumulation of micro-trauma and long-term tissue remodeling.
+                    </div>
                 </section>
                 <section id="info-velocity" class="info-section">
                     <h2>Velocity Transition Tracker</h2>

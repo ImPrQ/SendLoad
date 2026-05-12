@@ -622,6 +622,8 @@
                 <button class="info-tab active" data-section="general">General</button>
                 <button class="info-tab" data-section="multipliers">Multipliers</button>
                 <button class="info-tab" data-section="widgets">Widgets</button>
+                <button class="info-tab" data-section="analytics">Analytics Tuning</button>
+                <button class="info-tab" data-section="engine">Fatigue Engine Dynamics</button>
                 <button class="info-tab" data-section="appearance">Appearance</button>
                 <button class="info-tab" data-section="data">Data & Account</button>
             </aside>
@@ -872,6 +874,98 @@
                     </div>
                 </section>
 
+                <!-- Engine Config -->
+                <section id="settings-engine" class="info-section">
+                    <div style="display: flex; align-items: center; justify-content: space-between;">
+                        <h2>Fatigue Engine Dynamics</h2>
+                        <button class="info-icon-btn" onclick="goToInfo('engine')" title="About Engine Dynamics">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
+                        </button>
+                    </div>
+                    <p class="subtle">Enable and configure advanced non-linear fatigue mechanics.</p>
+
+                    <div class="session-meta-card" style="margin-top: var(--space-lg);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h3 style="color: var(--blue-500); margin: 0;">Dynamic Half-Lives</h3>
+                            <label class="switch">
+                                <input type="checkbox" id="eng-toggle-hl" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <p class="subtle" style="margin-bottom: 16px;">Scales the Slow-Track recovery duration based on session intensity.</p>
+                        
+                        <div class="eng-hl-group" style="transition: opacity 0.3s ease;">
+                            <div class="toggle-list" style="margin-bottom: 16px;">
+                                <div class="toggle-item">
+                                    <span style="font-size: 0.9rem;">Metabolic Fast-Track Scaling (Deep Acidosis)</span>
+                                    <label class="switch small">
+                                        <input type="checkbox" id="eng-meta-fast" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label>RPE 8 Multiplier</label>
+                                    <input type="number" step="0.1" id="eng-hl-8" class="form-input" value="1.2">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>RPE 9+ Multiplier</label>
+                                    <input type="number" step="0.1" id="eng-hl-9" class="form-input" value="1.5">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="session-meta-card" style="margin-top: var(--space-md);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                            <h3 style="color: var(--red-500); margin: 0;">Intra-Session Fatigue Tax</h3>
+                            <label class="switch">
+                                <input type="checkbox" id="eng-toggle-tax" checked>
+                                <span class="slider"></span>
+                            </label>
+                        </div>
+                        <p class="subtle" style="margin-bottom: 16px;">Applies a non-linear junk-volume penalty to climbs performed while deeply fatigued.</p>
+                        
+                        <div class="eng-tax-group" style="transition: opacity 0.3s ease;">
+                            <div class="toggle-list" style="margin-bottom: 16px;">
+                                <div class="toggle-item">
+                                    <span style="font-size: 0.9rem;">Neuro-Structural Link Penalty (<40%)</span>
+                                    <label class="switch small">
+                                        <input type="checkbox" id="eng-neuro-struct" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                                <div class="toggle-item">
+                                    <span style="font-size: 0.9rem;">Chronic Compensation Absorption</span>
+                                    <label class="switch small">
+                                        <input type="checkbox" id="eng-chronic-comp" checked>
+                                        <span class="slider"></span>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="form-row">
+                                <div class="form-group" style="flex:1;">
+                                    <label>Tax &lt;50% Readiness</label>
+                                    <input type="number" step="0.05" id="eng-tax-50" class="form-input" value="1.15">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Tax &lt;30% Readiness</label>
+                                    <input type="number" step="0.05" id="eng-tax-30" class="form-input" value="1.30">
+                                </div>
+                                <div class="form-group" style="flex:1;">
+                                    <label>Absorption Rate (%)</label>
+                                    <input type="number" step="5" id="eng-absorb" class="form-input" value="20">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="settings-actions">
+                        <button class="btn-secondary" onclick="resetSettingsTab('engine')">Reset to Defaults</button>
+                    </div>
+                </section>
+
                 <!-- Appearance -->
                 <section id="settings-appearance" class="info-section">
                     <h2>Appearance</h2>
@@ -939,6 +1033,7 @@
                 <button class="info-tab" data-section="acwr">ACWR Guide</button>
                 <button class="info-tab" data-section="channels">Stress Channels</button>
                 <button class="info-tab" data-section="readiness">Project Readiness</button>
+                <button class="info-tab" data-section="engine">Fatigue Dynamics</button>
                 <button class="info-tab" data-section="velocity">Velocity Tracker</button>
                 <button class="info-tab" data-section="intensity">Intensity per Move</button>
                 <button class="info-tab" data-section="correlator">Performance Correlator</button>
@@ -1008,6 +1103,33 @@
                         • <strong>50 CLU</strong> goes to the <em>Fast Track</em> (Acute), decaying with a ~36-hour half-life. This tracks immediate joint stiffness and localized inflammation.<br>
                         • <strong>50 CLU</strong> goes to the <em>Slow Track</em> (Systemic), decaying with a ~14-day (336-hour) half-life. This tracks the deep, slow accumulation of micro-trauma and long-term tissue remodeling.
                     </div>
+                </section>
+                <section id="info-engine" class="info-section">
+                    <h2>Advanced Fatigue Engine Dynamics</h2>
+                    
+                    <div style="background: rgba(249, 115, 22, 0.1); border-left: 4px solid var(--orange-500); padding: 16px; margin-bottom: 24px; border-radius: var(--radius-sm);">
+                        <strong style="color: var(--orange-600); display: block; margin-bottom: 8px;">Important: The Absolute RPE Rule</strong>
+                        <p style="font-size: 0.9rem; margin: 0; color: var(--text-main);"><strong>Log RPE based on how the move feels when you are 100% fresh.</strong> The app automatically calculates your exhaustion and dynamically scales fatigue. If you log a V4 as an RPE 9 simply because you are tired at the end of the session, you will double-count the fatigue penalty.</p>
+                    </div>
+
+                    <h3>Intra-Session Fatigue Tax</h3>
+                    <p>Training while deeply fatigued forces the body into inefficient, compensatory movement patterns, increasing tissue micro-trauma and CNS drain without providing a superior training stimulus (junk volume).</p>
+                    <ul>
+                        <li>The engine evaluates your readiness chronologically, <strong>climb by climb</strong>.</li>
+                        <li>If your readiness drops below 50% during a session, subsequent climbs receive a <strong>1.15x tax</strong>.</li>
+                        <li>If it drops below 30%, climbs receive a <strong>1.30x tax</strong>.</li>
+                        <li><strong>Cross-Channel Penalty:</strong> If your Neuro gauge drops below 40%, your coordination fails, and your connective tissues absorb uncontrolled forces. The engine applies an additional 1.2x penalty to the Structural tax.</li>
+                    </ul>
+
+                    <h3 style="margin-top: 24px;">Dynamic Half-Lives</h3>
+                    <p>A true limit boulder (RPE 9-10) doesn't just change the ratio of stress; it alters the fundamental rate of systemic repair.</p>
+                    <ul>
+                        <li>The <strong>Slow-Track</strong> half-life (CNS and deep tissue repair) scales up based on the RPE of the climb, taking up to 50% longer to recover for max-limit efforts.</li>
+                        <li><strong>Metabolic Fast-Track Scaling:</strong> A high metabolic load paired with high RPE implies intense muscle occlusion and deep ischemic acidosis, which takes mathematically longer to flush than low-intensity pump.</li>
+                    </ul>
+
+                    <h3 style="margin-top: 24px;">Training Quality Score</h3>
+                    <p>The Training Quality score is the ratio of your Base Load (adaptations) divided by your Taxed Load (damage). A 100% score means zero junk volume; lower scores indicate you trained heavily while fatigued.</p>
                 </section>
                 <section id="info-velocity" class="info-section">
                     <h2>Velocity Transition Tracker</h2>

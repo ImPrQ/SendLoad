@@ -4,25 +4,25 @@
    ======================================== */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-import { 
-  initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  collection, doc, setDoc, deleteDoc, onSnapshot, addDoc
+import {
+    initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+    collection, doc, setDoc, deleteDoc, onSnapshot, addDoc
 } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
 
 // -- Firebase Configuration --
 const firebaseConfig = {
-  apiKey: "AIzaSyBXmWXvaQppyQGXYdXeb7DBz2n4UZ2VyaE",
-  authDomain: "sendload-b125f.firebaseapp.com",
-  projectId: "sendload-b125f",
-  storageBucket: "sendload-b125f.firebasestorage.app",
-  messagingSenderId: "207908664368",
-  appId: "1:207908664368:web:e712e40f2140e82160e9f5"
+    apiKey: "AIzaSyBXmWXvaQppyQGXYdXeb7DBz2n4UZ2VyaE",
+    authDomain: "sendload-b125f.firebaseapp.com",
+    projectId: "sendload-b125f",
+    storageBucket: "sendload-b125f.firebasestorage.app",
+    messagingSenderId: "207908664368",
+    appId: "1:207908664368:web:e712e40f2140e82160e9f5"
 };
 
 const app = initializeApp(firebaseConfig);
 const db = initializeFirestore(app, {
-  localCache: persistentLocalCache({tabManager: persistentMultipleTabManager()})
+    localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() })
 });
 const auth = getAuth(app);
 const provider = new GoogleAuthProvider();
@@ -59,6 +59,19 @@ let fatigueTuning = {
     struct: { partition: 0.5, fastHL: 36, slowHL: 336 }
 };
 
+let engineConfig = {
+    dynamicHalfLives: true,
+    fatigueTax: true,
+    metaFastScaling: true,
+    neuroStructLink: true,
+    chronicCompensation: true,
+    hlMultRPE8: 1.2,
+    hlMultRPE9: 1.5,
+    taxThreshold50: 1.15,
+    taxThreshold30: 1.30,
+    chronicAbsorption: 0.20
+};
+
 // ---- Legacy Mapping (for retroactive multiplier support) ----
 const LEGACY_MAPS = {
     angle: { '0.8': 'slab', '1': 'vertical', '1.0': 'vertical', '1.2': '20deg', '1.4': '30deg', '1.6': '40deg', '1.8': '50deg' },
@@ -70,7 +83,7 @@ const LEGACY_MAPS = {
 function recalculateSession(sess) {
     if (!sess.climbs) return sess;
     let newTotalLoad = 0;
-    
+
     sess.climbs = sess.climbs.map(c => {
         // Infer keys if missing (legacy data)
         const aKey = c.angleKey || LEGACY_MAPS.angle[String(c.angle)];
@@ -87,13 +100,13 @@ function recalculateSession(sess) {
         // Recalculate load and channels
         const load = calculateLoad(c.type, c.moves, aMult, rMult, pMult, hMult);
         const ch = calculateChannels(c.type, c.moves, aMult, rMult, pMult, hMult);
-        
+
         newTotalLoad += load;
-        return { 
-            ...c, 
+        return {
+            ...c,
             angleKey: aKey, rpeKey: rKey, powerKey: pKey, holdKey: hKey,
             angle: aMult, rpe: rMult, power: pMult, hold: hMult,
-            load, neuro: ch.neuro, metabolic: ch.metabolic, structural: ch.structural 
+            load, neuro: ch.neuro, metabolic: ch.metabolic, structural: ch.structural
         };
     });
 
@@ -108,29 +121,29 @@ let unsubscribeTemplates = null;
 onAuthStateChanged(auth, (user) => {
     if (user) {
         currentUser = user;
-        
+
         // Show App Navigation and switch to dashboard
         document.getElementById('main-nav').style.display = 'flex';
         switchToView('dashboard');
-        
+
         // Connect to user's specific data silo
         if (unsubscribeSnapshot) unsubscribeSnapshot();
-        
+
         unsubscribeSnapshot = onSnapshot(collection(db, `users/${user.uid}/sessions`), (snapshot) => {
             const rawSessions = [];
             snapshot.forEach((doc) => {
                 rawSessions.push({ id: doc.id, ...doc.data() });
             });
-            
+
             // Recalculate based on current multipliers (retroactive support)
             allSessions = rawSessions.map(s => recalculateSession(s));
-            
+
             // Sort descending by creation date
-            allSessions.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+            allSessions.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
             refreshDashboard();
             if (document.getElementById('view-history').classList.contains('active')) renderHistory();
         });
-        
+
         // Listen to User Settings
         if (unsubscribeSettings) unsubscribeSettings();
         unsubscribeSettings = onSnapshot(doc(db, `users/${user.uid}/settings`, 'preferences'), (docSnap) => {
@@ -147,7 +160,8 @@ onAuthStateChanged(auth, (user) => {
                 themeColor = data.themeColor || 'orange';
                 defaultLogPreset = data.defaultLogPreset || 'boulder';
                 fatigueTuning = data.fatigueTuning || fatigueTuning;
-                
+                engineConfig = data.engineConfig || engineConfig;
+
                 // Sync UI inputs
                 const winInp = document.getElementById('setting-chronic-window');
                 if (winInp) winInp.value = chronicWindowDays;
@@ -161,7 +175,32 @@ onAuthStateChanged(auth, (user) => {
                     if (fast) fast.value = fatigueTuning[ch].fastHL;
                     if (slow) slow.value = fatigueTuning[ch].slowHL;
                 });
-                
+
+                // Sync Engine Config UI
+                const engToggleHL = document.getElementById('eng-toggle-hl');
+                if (engToggleHL) engToggleHL.checked = engineConfig.dynamicHalfLives;
+                const engToggleTax = document.getElementById('eng-toggle-tax');
+                if (engToggleTax) engToggleTax.checked = engineConfig.fatigueTax;
+                const engMetaFast = document.getElementById('eng-meta-fast');
+                if (engMetaFast) engMetaFast.checked = engineConfig.metaFastScaling;
+                const engNeuroStruct = document.getElementById('eng-neuro-struct');
+                if (engNeuroStruct) engNeuroStruct.checked = engineConfig.neuroStructLink;
+                const engChronicComp = document.getElementById('eng-chronic-comp');
+                if (engChronicComp) engChronicComp.checked = engineConfig.chronicCompensation;
+
+                const engHl8 = document.getElementById('eng-hl-8');
+                if (engHl8) engHl8.value = engineConfig.hlMultRPE8;
+                const engHl9 = document.getElementById('eng-hl-9');
+                if (engHl9) engHl9.value = engineConfig.hlMultRPE9;
+                const engTax50 = document.getElementById('eng-tax-50');
+                if (engTax50) engTax50.value = engineConfig.taxThreshold50;
+                const engTax30 = document.getElementById('eng-tax-30');
+                if (engTax30) engTax30.value = engineConfig.taxThreshold30;
+                const engAbsorb = document.getElementById('eng-absorb');
+                if (engAbsorb) engAbsorb.value = engineConfig.chronicAbsorption * 100;
+
+                if (typeof syncEngineUI === 'function') syncEngineUI();
+
                 // Sync Info tab documentation
                 const infoDays = document.getElementById('info-chronic-days');
                 if (infoDays) infoDays.textContent = chronicWindowDays;
@@ -172,7 +211,7 @@ onAuthStateChanged(auth, (user) => {
                 if (r7) r7.value = restTimerDefaults.rpe7;
                 if (r8) r8.value = restTimerDefaults.rpe8;
                 if (r9) r9.value = restTimerDefaults.rpe9;
-                
+
                 const nd = document.getElementById('setting-neuro-dampener');
                 const md = document.getElementById('setting-meta-dampener');
                 const sd = document.getElementById('setting-struct-dampener');
@@ -186,7 +225,7 @@ onAuthStateChanged(auth, (user) => {
                 // Multiplier Inputs
                 syncMultiplierInputs();
                 applyCustomMultipliers();
-                
+
                 // Widget Toggles
                 syncWidgetToggles();
                 applyWidgetVisibility();
@@ -201,27 +240,32 @@ onAuthStateChanged(auth, (user) => {
                 chronicWindowDays = 28;
                 restTimerDefaults = { rpe7: 3, rpe8: 5, rpe9: 8 };
                 neuroDampener = 1.0; metaDampener = 1.0; structDampener = 1.0;
+                engineConfig = {
+                    dynamicHalfLives: true, fatigueTax: true, metaFastScaling: true,
+                    neuroStructLink: true, chronicCompensation: true,
+                    hlMultRPE8: 1.2, hlMultRPE9: 1.5, taxThreshold50: 1.15, taxThreshold30: 1.30, chronicAbsorption: 0.20
+                };
             }
             refreshDashboard();
         });
-        
+
         if (unsubscribeTemplates) unsubscribeTemplates();
         unsubscribeTemplates = onSnapshot(collection(db, `users/${user.uid}/templates`), (snapshot) => {
             userTemplates = [];
             snapshot.forEach((doc) => {
                 userTemplates.push({ id: doc.id, ...doc.data() });
             });
-            userTemplates.sort((a,b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
+            userTemplates.sort((a, b) => new Date(a.createdAt || 0) - new Date(b.createdAt || 0));
             renderTemplates();
         });
-        
-        
+
+
     } else {
         // User is signed out
         currentUser = null;
         allSessions = [];
         deloadWeeks = [];
-        
+
         if (unsubscribeSnapshot) {
             unsubscribeSnapshot();
             unsubscribeSnapshot = null;
@@ -234,7 +278,7 @@ onAuthStateChanged(auth, (user) => {
             unsubscribeTemplates();
             unsubscribeTemplates = null;
         }
-        
+
         // Hide Nav and show Login Screen
         document.getElementById('main-nav').style.display = 'none';
         switchToView('login');
@@ -412,7 +456,7 @@ $$('#info-sidebar .info-tab').forEach(tab => {
     });
 });
 
-window.goToInfo = function(sectionId) {
+window.goToInfo = function (sectionId) {
     switchToView('info');
     showInfoSection(sectionId);
 };
@@ -441,32 +485,32 @@ function onClimbTypeChange(type) {
     const gradeWrapper = $('#grade-wrapper');
     const previewAngle = $('#preview-angle');
     const previewAngleOp = $('#preview-angle-op');
-    
+
     const movesWrapper = $('#moves-wrapper');
     const fbVolumeWrapper = $('#fingerboard-volume-wrapper');
     const powerWrapper = $('#power-wrapper');
     const fbModalityWrapper = $('#fb-modality-wrapper');
 
     if (type === 'fingerboard') {
-        if(wallAngleWrapper) wallAngleWrapper.style.display = 'none';
-        if(gradeWrapper) gradeWrapper.style.display = 'none';
-        if(previewAngle) previewAngle.style.display = 'none';
-        if(previewAngleOp) previewAngleOp.style.display = 'none';
-        
-        if(movesWrapper) movesWrapper.style.display = 'none';
-        if(fbVolumeWrapper) fbVolumeWrapper.style.display = 'block';
-        if(powerWrapper) powerWrapper.style.display = 'none';
-        if(fbModalityWrapper) fbModalityWrapper.style.display = 'block';
+        if (wallAngleWrapper) wallAngleWrapper.style.display = 'none';
+        if (gradeWrapper) gradeWrapper.style.display = 'none';
+        if (previewAngle) previewAngle.style.display = 'none';
+        if (previewAngleOp) previewAngleOp.style.display = 'none';
+
+        if (movesWrapper) movesWrapper.style.display = 'none';
+        if (fbVolumeWrapper) fbVolumeWrapper.style.display = 'block';
+        if (powerWrapper) powerWrapper.style.display = 'none';
+        if (fbModalityWrapper) fbModalityWrapper.style.display = 'block';
     } else {
-        if(wallAngleWrapper) wallAngleWrapper.style.display = 'block';
-        if(gradeWrapper) gradeWrapper.style.display = 'block';
-        if(previewAngle) previewAngle.style.display = 'inline';
-        if(previewAngleOp) previewAngleOp.style.display = 'inline';
-        
-        if(movesWrapper) movesWrapper.style.display = 'block';
-        if(fbVolumeWrapper) fbVolumeWrapper.style.display = 'none';
-        if(powerWrapper) powerWrapper.style.display = 'block';
-        if(fbModalityWrapper) fbModalityWrapper.style.display = 'none';
+        if (wallAngleWrapper) wallAngleWrapper.style.display = 'block';
+        if (gradeWrapper) gradeWrapper.style.display = 'block';
+        if (previewAngle) previewAngle.style.display = 'inline';
+        if (previewAngleOp) previewAngleOp.style.display = 'inline';
+
+        if (movesWrapper) movesWrapper.style.display = 'block';
+        if (fbVolumeWrapper) fbVolumeWrapper.style.display = 'none';
+        if (powerWrapper) powerWrapper.style.display = 'block';
+        if (fbModalityWrapper) fbModalityWrapper.style.display = 'none';
     }
     updatePreview();
 }
@@ -507,7 +551,7 @@ function bindStepper(minusId, plusId, inputEl, minVal) {
     const minBtn = $(`#${minusId}`);
     const plusBtn = $(`#${plusId}`);
     if (!minBtn || !plusBtn || !inputEl) return;
-    
+
     minBtn.addEventListener('click', () => {
         const v = parseInt(inputEl.value) || 0;
         inputEl.value = Math.max(minVal, v - 1);
@@ -650,12 +694,12 @@ $('#btn-add-climb').addEventListener('click', () => {
     const rpeData = getActivePillValue('rpe-group');
     const powerKey = getActivePillKey('power-group');
     const holdData = getActivePillValue('hold-group');
-    
+
     let angle = angleData.value;
     let rpe = rpeData.value;
     const power = getEffectivePower();
     const hold = holdData.value;
-    
+
     const grade = currentClimbType === 'fingerboard' ? '' : $('#climb-grade').value.trim();
     const notes = $('#climb-notes').value.trim();
 
@@ -788,7 +832,7 @@ $('#btn-save-session').addEventListener('click', async () => {
         ...sessionData,
         createdAt: existingDate || new Date().toISOString()
     };
-    
+
     const targetId = editingSessionId || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6));
     editingSessionId = null;
 
@@ -838,13 +882,13 @@ function getIsoWeekString(date) {
     const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     const dayNum = d.getUTCDay() || 7;
     d.setUTCDate(d.getUTCDate() + 4 - dayNum);
-    const yearStart = new Date(Date.UTC(d.getUTCFullYear(),0,1));
-    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1)/7);
+    const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+    const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
     return `${d.getUTCFullYear()}-W${weekNo}`;
 }
 
 window.handleDeloadToggle = async (isChecked) => {
-    if(!currentUser) return;
+    if (!currentUser) return;
     const weekStr = getIsoWeekString(new Date());
     let newDeloads = [...deloadWeeks];
     if (isChecked && !newDeloads.includes(weekStr)) {
@@ -852,7 +896,7 @@ window.handleDeloadToggle = async (isChecked) => {
     } else if (!isChecked && newDeloads.includes(weekStr)) {
         newDeloads = newDeloads.filter(w => w !== weekStr);
     }
-    
+
     // Optimistic UI update
     deloadWeeks = newDeloads;
     refreshDashboard();
@@ -866,6 +910,8 @@ window.handleDeloadToggle = async (isChecked) => {
 
 // ---- Dashboard ----
 function refreshDashboard() {
+    evaluateEngine(allSessions);
+
     const now = new Date();
     // Rolling 7-day window: today + 6 previous days = 7 calendar days
     const sevenDaysAgo = new Date(now);
@@ -922,7 +968,7 @@ function refreshDashboard() {
     // Chronic: past N days (user-configurable)
     const pastChronicStart = new Date(now);
     pastChronicStart.setDate(now.getDate() - chronicWindowDays);
-    pastChronicStart.setHours(0,0,0,0);
+    pastChronicStart.setHours(0, 0, 0, 0);
     const sixHoursAgoACWR = new Date(now.getTime() - 6 * 3600 * 1000);
     const lastChronicSessions = allSessions.filter(s => {
         const d = parseLocalDate(s.date);
@@ -1022,9 +1068,9 @@ function refreshDashboard() {
         // Check if last 4 weeks didn't contain a deload, and acute > 0.8 * chronic constantly...
         // For performance, we check if chronicLoad is significantly high and user hasn't rested.
         let hasNoRecentDeloads = true;
-        for (let i=0; i<4; i++) {
+        for (let i = 0; i < 4; i++) {
             const checkD = new Date(now);
-            checkD.setDate(now.getDate() - (i*7));
+            checkD.setDate(now.getDate() - (i * 7));
             if (deloadWeeks.includes(getIsoWeekString(checkD))) {
                 hasNoRecentDeloads = false;
                 break;
@@ -1138,10 +1184,10 @@ function renderGradePyramids() {
     const now = new Date();
     const past30Start = new Date(now);
     past30Start.setDate(now.getDate() - 30);
-    past30Start.setHours(0,0,0,0);
+    past30Start.setHours(0, 0, 0, 0);
 
     const recentSessions = allSessions.filter(s => parseLocalDate(s.date) >= past30Start);
-    
+
     const boulderGrades = {};
     const leadGrades = {};
 
@@ -1149,7 +1195,7 @@ function renderGradePyramids() {
     recentSessions.forEach(sess => {
         sess.climbs.forEach(c => {
             if (!c.grade || !c.grade.trim()) return; // skip empty grades
-            
+
             // Standardize grade format: uppercase, strip spaces (e.g. " 7a + " -> "7A+")
             const gradeStr = c.grade.toUpperCase().replace(/\s/g, '');
 
@@ -1178,7 +1224,7 @@ function renderPyramidStack(selector, gradeMap, blockClass) {
     sortedGrades.forEach(grade => {
         const count = gradeMap[grade];
         html += '<div class="pyramid-tier">';
-        
+
         // Instead of capping, scale down the blocks if there are too many
         let sizeClass = '';
         if (count > 24) sizeClass = 'size-tiny';
@@ -1188,7 +1234,7 @@ function renderPyramidStack(selector, gradeMap, blockClass) {
         for (let i = 0; i < count; i++) {
             html += `<div class="pyramid-block ${blockClass} ${sizeClass}">${grade}</div>`;
         }
-        
+
         html += '</div>';
     });
 
@@ -1218,6 +1264,7 @@ function renderRecentSessions() {
                 <span class="session-row-climbs">${s.climbs.length} climb${s.climbs.length !== 1 ? 's' : ''}</span>
                 <div style="display:flex; align-items:center;">
                     <span class="session-row-load">${s.totalLoad.toFixed(0)} CLU</span>
+                    ${s.trainingQuality !== undefined ? `<span style="font-size: 0.75rem; font-weight: bold; color: ${s.trainingQuality >= 90 ? 'var(--green-400)' : s.trainingQuality >= 70 ? 'var(--yellow-400)' : 'var(--red-500)'}; margin-left: 8px; margin-right: auto;" title="Training Quality Score">${s.trainingQuality}% Q</span>` : ''}
                     ${renderChannelMini(ch.neuro, ch.metabolic, ch.structural)}
                 </div>
             </div>`;
@@ -1288,8 +1335,8 @@ function drawWeeklyChart() {
     // Nice rounded Y-axis max
     const rawMax = Math.max(100, ...weeks.map(w => w.stackTotal));
     const niceMax = rawMax <= 500 ? Math.ceil(rawMax / 100) * 100
-                  : rawMax <= 2000 ? Math.ceil(rawMax / 500) * 500
-                  : Math.ceil(rawMax / 1000) * 1000;
+        : rawMax <= 2000 ? Math.ceil(rawMax / 500) * 500
+            : Math.ceil(rawMax / 1000) * 1000;
 
     const chartW = W - padLeft - padRight;
     const chartH = H - padTop - padBottom;
@@ -1317,8 +1364,8 @@ function drawWeeklyChart() {
     // Channel rendering order (bottom to top): structural, metabolic, neuro
     const channelDefs = [
         { key: 'structural', colors: ['#4ade80', '#22c55e'] },
-        { key: 'metabolic',  colors: ['#60a5fa', '#3b82f6'] },
-        { key: 'neuro',      colors: ['#fb923c', '#ef4444'] }
+        { key: 'metabolic', colors: ['#60a5fa', '#3b82f6'] },
+        { key: 'neuro', colors: ['#fb923c', '#ef4444'] }
     ];
 
     weeks.forEach((w, i) => {
@@ -1410,7 +1457,7 @@ document.querySelectorAll('#chart-weekly .legend-item[data-channel]').forEach(bt
 function drawModifiersChart() {
     const canvas = $('#canvas-modifiers');
     const ctx = canvas.getContext('2d');
-    
+
     // Ensure parent is visible and has width before drawing
     const rect = canvas.parentElement.getBoundingClientRect();
     if (rect.width === 0) return;
@@ -1644,7 +1691,7 @@ function drawSessionRadar(canvasId, climbs) {
     // Normalize (0.1 to 1.0 for visibility)
     // Ranges: Int (0.8-1.6), Vol (1-30), Ang (0.8-1.8), Hold (0.8-1.6)
     const norm = (val, min, max) => Math.max(0.1, Math.min(1.0, (val - min) / (max - min)));
-    
+
     const p = [
         norm(avgInt, 0.8, 1.6),  // Top: Intensity
         norm(avgVol, 1, 30),     // Right: Volume
@@ -1656,7 +1703,7 @@ function drawSessionRadar(canvasId, climbs) {
     const maxR = size / 2 - 8;
 
     ctx.clearRect(0, 0, size, size);
-    
+
     // Draw background axes
     ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.lineWidth = 1;
@@ -1741,6 +1788,12 @@ function renderHistory() {
                             <div class="history-stat-val load">${s.totalLoad.toFixed(0)}</div>
                             <div class="history-stat-label">CLU</div>
                         </div>
+                        ${s.trainingQuality !== undefined ? `
+                        <div class="history-stat" title="Training Quality Score (Adaptation Load / Taxed Load)">
+                            <div class="history-stat-val" style="color: ${s.trainingQuality >= 90 ? 'var(--green-400)' : s.trainingQuality >= 70 ? 'var(--yellow-400)' : 'var(--red-500)'}; font-weight: 800;">${s.trainingQuality}%</div>
+                            <div class="history-stat-label">Quality</div>
+                        </div>
+                        ` : ''}
                     </div>
                     <canvas id="radar-${s.id}" class="session-radar" width="80" height="80" style="margin-left: auto; margin-right: 15px;"></canvas>
                     ${renderChannelMini(ch.neuro, ch.metabolic, ch.structural)}
@@ -1784,7 +1837,7 @@ async function deleteSession(id) {
     try {
         await deleteDoc(doc(db, `users/${currentUser.uid}/sessions`, id));
         showToast('Session deleted from cloud.');
-    } catch(e) {
+    } catch (e) {
         console.error(e);
         showToast('Offline: Delete pending.');
     }
@@ -1835,7 +1888,7 @@ $('#session-presets').addEventListener('click', (e) => {
 
         const preset = e.target.dataset.preset;
         const nameInput = $('#session-name');
-        
+
         if (preset === 'power') {
             applyTemplateToForm('boulder', 6, '1.6', '1.6', '1.2', '1.0');
         } else if (preset === 'project') {
@@ -1894,7 +1947,7 @@ function applyTemplateToForm(type, moves, angle, rpe, power, hold, reps = 0, tut
 
     const warmupToggle = $('#warmup-toggle');
     if (warmupToggle) warmupToggle.checked = isWarmup;
-    
+
     updatePreview();
 }
 
@@ -1907,13 +1960,13 @@ $('#btn-save-template').addEventListener('click', async () => {
     const moves = getEffectiveMoves();
     const reps = parseInt($('#fb-reps').value) || 0;
     const tut = parseInt($('#fb-tut').value) || 0;
-    
+
     let angle = "1.0";
     if (type !== 'fingerboard') {
         const activeAngle = $('#wall-angle-group .active');
         if (activeAngle) angle = activeAngle.dataset.value;
     }
-    
+
     const rpe = $('#rpe-group .active').dataset.value;
     const power = type === 'fingerboard' ? $('#fb-modality-group .active').dataset.value : $('#power-group .active').dataset.value;
     const hold = $('#hold-group .active').dataset.value;
@@ -1989,7 +2042,7 @@ function getChronicLoadASL() {
     const chronicStart = new Date(now);
     chronicStart.setDate(now.getDate() - chronicWindowDays);
     const sixHoursAgo = new Date(now.getTime() - 6 * 3600 * 1000);
-    
+
     const recentSessions = allSessions.filter(s => {
         const d = parseLocalDate(s.date);
         if (d < chronicStart) return false;
@@ -1998,66 +2051,66 @@ function getChronicLoadASL() {
         return sessTime <= sixHoursAgo;
     });
     if (recentSessions.length === 0) return 0;
-    
+
     const totalCLU = recentSessions.reduce((sum, s) => sum + s.totalLoad, 0);
     return totalCLU / recentSessions.length;
 }
 
 $('#session-target-select').addEventListener('change', () => updateTargetUI());
 
-window.updateTargetUI = function(currentLoad = null) {
+window.updateTargetUI = function (currentLoad = null) {
     if (currentLoad === null) {
         currentLoad = currentSessionClimbs.reduce((sum, c) => sum + c.load, 0);
     }
-    
+
     const select = $('#session-target-select');
     const fill = $('#target-progress-fill');
     const feedback = $('#target-feedback');
     if (!select || !fill || !feedback) return;
-    
+
     const type = select.value;
     if (type === '0') {
         fill.style.width = '0%';
         feedback.textContent = 'No target';
         return;
     }
-    
+
     const asl = getChronicLoadASL() || 500;
     let targetLoad = 0;
     if (type === 'light') targetLoad = asl * 0.5;
     else if (type === 'moderate') targetLoad = asl * 1.0;
     else if (type === 'heavy') targetLoad = asl * 1.5;
-    
+
     let pct = (currentLoad / targetLoad) * 100;
-    
+
     if (pct < 80) fill.style.backgroundColor = 'var(--blue-500)';
     else if (pct <= 105) fill.style.backgroundColor = 'var(--green-500)'; // Optimal zone
     else fill.style.backgroundColor = 'var(--red-500)'; // Overshot
-    
+
     fill.style.width = Math.min(pct, 100) + '%';
     feedback.textContent = pct.toFixed(0) + '% of ' + targetLoad.toFixed(0) + ' CLU';
 };
 
-window.checkInterference = function() {
+window.checkInterference = function () {
     const banner = $('#interference-warning');
     const textEl = $('#interference-text');
     if (!banner || !textEl) return;
-    
+
     const now = new Date();
     const fortyEightHoursAgo = new Date(now);
     fortyEightHoursAgo.setHours(now.getHours() - 48);
-    
+
     const recentSessions = allSessions.filter(s => new Date(s.date) >= fortyEightHoursAgo);
-    
+
     let pastMetabolic = 0;
     let pastNeuro = 0;
     let pastStructural = 0;
     let pastTotal = 0;
-    
+
     recentSessions.forEach(s => {
         // Exclude the currently edited session if any
         if (editingSessionId && s.id === editingSessionId) return;
-        
+
         pastTotal += s.totalLoad;
         s.climbs.forEach(c => {
             pastMetabolic += (c.metabolic || 0);
@@ -2065,33 +2118,33 @@ window.checkInterference = function() {
             pastStructural += (c.structural || 0);
         });
     });
-    
+
     let curMetabolic = 0;
     let curNeuro = 0;
     let curStructural = 0;
     let curTotal = 0;
-    
+
     currentSessionClimbs.forEach(c => {
         curMetabolic += (c.metabolic || 0);
         curNeuro += (c.neuro || 0);
         curStructural += (c.structural || 0);
         curTotal += c.load;
     });
-    
+
     const totalMetabolic = pastMetabolic + curMetabolic;
     const totalNeuro = pastNeuro + curNeuro;
     const totalStructural = pastStructural + curStructural;
     const totalLoad48h = pastTotal + curTotal;
-    
+
     const asl = getChronicLoadASL() || 500;
-    
+
     let warning = null;
-    
+
     // Rule 1: Neuro-Metabolic Clash
     // If both are highly accumulated in the 48h window + current session
     if (totalMetabolic > 250 && totalNeuro > 250) {
         warning = "Concurrent Training Clash: High metabolic acidosis blunts neurological adaptations. Avoid mixing heavy endurance with max power.";
-    } 
+    }
     // Rule 2: Structural Overload
     else if (totalStructural > 500) {
         warning = "Structural Overload: High connective tissue strain detected. Keep structural load light to allow tendon recovery.";
@@ -2100,7 +2153,7 @@ window.checkInterference = function() {
     else if (totalLoad48h > asl * 2.0 && curTotal > 0) {
         warning = "Overtraining Warning: High cumulative load over the last 48 hours. Consider making today a light recovery day.";
     }
-    
+
     if (warning) {
         textEl.textContent = warning;
         banner.style.display = 'block';
@@ -2118,7 +2171,7 @@ window.checkInterference = function() {
 function parseFontGrade(str) {
     if (!str) return 0;
     const s = str.trim().toLowerCase();
-    
+
     // Font scale: 6a=1, 6a+=2, 6b=3, 6b+=4, 6c=5, 6c+=6, 7a=7...
     const match = s.match(/^([4-9])([a-c])(\+)?$/);
     if (match) {
@@ -2148,20 +2201,20 @@ function getFontGradeLabel(score) {
     return `${baseNum}${letter}${plus}`;
 }
 
-window.renderAnalytics = function() {
+window.renderAnalytics = function () {
     const tfSelect = document.getElementById('analytics-timeframe');
     if (!tfSelect) return;
     const timeframeDays = parseInt(tfSelect.value) || 90;
-    
+
     const now = new Date();
     const startDate = new Date(now);
     startDate.setDate(now.getDate() - timeframeDays);
-    startDate.setHours(0,0,0,0);
-    
+    startDate.setHours(0, 0, 0, 0);
+
     const sessions = allSessions
         .filter(s => parseLocalDate(s.date) >= startDate)
-        .sort((a,b) => parseLocalDate(a.date) - parseLocalDate(b.date));
-        
+        .sort((a, b) => parseLocalDate(a.date) - parseLocalDate(b.date));
+
     drawVelocityChart(sessions, timeframeDays);
     drawIntensityChart(sessions, timeframeDays);
     drawCorrelatorChart(sessions, timeframeDays);
@@ -2192,19 +2245,19 @@ function drawVelocityChart(sessions, days) {
     const H = 280;
     const padL = 40, padR = 20, padT = 20, padB = 40;
     ctx.clearRect(0, 0, W, H);
-    
+
     if (sessions.length < 2) {
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.font = '14px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText('Not enough data to graph velocity phases.', W/2, H/2);
+        ctx.fillText('Not enough data to graph velocity phases.', W / 2, H / 2);
         return;
     }
 
     // Group by week
     const numBuckets = Math.max(2, Math.ceil(days / 7));
-    const buckets = Array.from({length: numBuckets}, () => ({ lowVel: 0, highVel: 0, date: null }));
-    
+    const buckets = Array.from({ length: numBuckets }, () => ({ lowVel: 0, highVel: 0, date: null }));
+
     const now = new Date();
     sessions.forEach(sess => {
         const d = parseLocalDate(sess.date);
@@ -2212,7 +2265,7 @@ function drawVelocityChart(sessions, days) {
         let bIdx = numBuckets - 1 - Math.floor(diffDays / 7);
         if (bIdx < 0) bIdx = 0;
         if (bIdx >= numBuckets) bIdx = numBuckets - 1;
-        
+
         buckets[bIdx].date = buckets[bIdx].date || d;
         sess.climbs.forEach(c => {
             const p = parseFloat(c.power) || 1.0;
@@ -2223,9 +2276,9 @@ function drawVelocityChart(sessions, days) {
     });
 
     const maxVal = Math.max(...buckets.map(b => b.lowVel + b.highVel), 100);
-    
+
     const xStep = (W - padL - padR) / Math.max(1, (numBuckets - 1));
-    
+
     // Draw axes
     ctx.strokeStyle = 'rgba(255,255,255,0.1)';
     ctx.beginPath();
@@ -2239,7 +2292,7 @@ function drawVelocityChart(sessions, days) {
     buckets.forEach((b, i) => {
         const x = padL + i * xStep;
         const y = H - padB - (b.lowVel / maxVal) * (H - padT - padB);
-        if (i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.stroke();
 
@@ -2250,7 +2303,7 @@ function drawVelocityChart(sessions, days) {
     buckets.forEach((b, i) => {
         const x = padL + i * xStep;
         const y = H - padB - (b.highVel / maxVal) * (H - padT - padB);
-        if (i===0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     });
     ctx.stroke();
 
@@ -2299,7 +2352,7 @@ function drawIntensityHistogram() {
             s.climbs.forEach(c => {
                 const r = parseFloat(c.rpe) || 1.0;
                 const load = parseFloat(c.load) || 0;
-                
+
                 if (r <= 0.8) buckets[0] += load;
                 else if (r <= 1.0) buckets[1] += load;
                 else if (r <= 1.2) buckets[2] += load;
@@ -2333,22 +2386,22 @@ function drawIntensityHistogram() {
     // 3. Draw the 5 Bars
     const labels = ['RPE 5', 'RPE 6', 'RPE 7', 'RPE 8', 'RPE 9+'];
     // Colors: Green (Easy), Gray (Mod), Gray (Hard), Orange (Very Hard), Red (Limit)
-    const colors = ['#4ade80', '#9ca3af', '#9ca3af', '#f97316', '#ef4444']; 
-    
+    const colors = ['#4ade80', '#9ca3af', '#9ca3af', '#f97316', '#ef4444'];
+
     const barGroupW = chartW / 5;
     const barW = Math.min(barGroupW * 0.4, 60); // Cap max width
 
     buckets.forEach((val, i) => {
         const xCenter = padL + barGroupW * i + barGroupW / 2;
-        
+
         // Bar
         const barH = (val / maxVal) * chartH;
         const bX = xCenter - barW / 2;
         const bY = padT + chartH - barH;
-        
+
         if (barH > 0) {
             ctx.fillStyle = colors[i];
-            
+
             // Draw Rounded Rectangle
             const r = Math.min(4, barH / 2);
             ctx.beginPath();
@@ -2377,6 +2430,151 @@ function drawIntensityHistogram() {
     });
 }
 
+function evaluateEngine(sessions) {
+    let sorted = [...sessions].sort((a, b) => {
+        let ta = a.createdAt ? new Date(a.createdAt) : parseLocalDate(a.date);
+        let tb = b.createdAt ? new Date(b.createdAt) : parseLocalDate(b.date);
+        if (!a.createdAt) ta.setHours(12, 0, 0, 0);
+        if (!b.createdAt) tb.setHours(12, 0, 0, 0);
+        return ta - tb;
+    });
+
+    const getFatiguePct = (f, s, chronic) => {
+        if (chronic <= 0) return { totalPct: 0 };
+        let fPct = (f / chronic) * 50;
+        let sPct = (s / chronic) * 50;
+        let total = fPct + sPct;
+        if (total > 95) total = 95;
+        return { totalPct: total };
+    };
+
+    let processed = [];
+
+    sorted.forEach(sess => {
+        let sessTime = sess.createdAt ? new Date(sess.createdAt) : parseLocalDate(sess.date);
+        if (!sess.createdAt) sessTime.setHours(12, 0, 0, 0);
+
+        let chronWindowStart = new Date(sessTime);
+        chronWindowStart.setDate(sessTime.getDate() - chronicWindowDays);
+        let chronStruct = 0, chronNeuro = 0, chronMet = 0;
+
+        processed.forEach(pSess => {
+            if (pSess.time >= chronWindowStart && pSess.time < sessTime) {
+                pSess.climbs.forEach(c => {
+                    chronStruct += c.structural || 0;
+                    chronNeuro += c.neuro || 0;
+                    chronMet += c.metabolic || 0;
+                });
+                if (engineConfig.chronicCompensation) {
+                    pSess.climbs.forEach(c => {
+                        chronStruct += ((c.taxedStructural || c.structural) - (c.structural || 0)) * engineConfig.chronicAbsorption;
+                        chronNeuro += ((c.taxedNeuro || c.neuro) - (c.neuro || 0)) * engineConfig.chronicAbsorption;
+                        chronMet += ((c.taxedMetabolic || c.metabolic) - (c.metabolic || 0)) * engineConfig.chronicAbsorption;
+                    });
+                }
+            }
+        });
+
+        const weeksInChronic = chronicWindowDays / 7;
+        const wChronStruct = Math.max(1, chronStruct / weeksInChronic);
+        const wChronNeuro = Math.max(1, chronNeuro / weeksInChronic);
+        const wChronMet = Math.max(1, chronMet / weeksInChronic);
+
+        let fMeta = 0, sMeta = 0, fNeuro = 0, sNeuro = 0, fStruct = 0, sStruct = 0;
+
+        processed.forEach(pSess => {
+            const diffHours = Math.max(0, (sessTime - pSess.time) / (1000 * 3600));
+            pSess.climbs.forEach(c => {
+                fMeta += (c.taxedMetabolic * fatigueTuning.meta.partition * ((168 * Math.LN2) / c.hlFastMeta)) * Math.pow(0.5, diffHours / c.hlFastMeta);
+                sMeta += (c.taxedMetabolic * (1 - fatigueTuning.meta.partition) * ((168 * Math.LN2) / c.hlSlowMeta)) * Math.pow(0.5, diffHours / c.hlSlowMeta);
+                fNeuro += (c.taxedNeuro * fatigueTuning.neuro.partition * ((168 * Math.LN2) / c.hlFastNeuro)) * Math.pow(0.5, diffHours / c.hlFastNeuro);
+                sNeuro += (c.taxedNeuro * (1 - fatigueTuning.neuro.partition) * ((168 * Math.LN2) / c.hlSlowNeuro)) * Math.pow(0.5, diffHours / c.hlSlowNeuro);
+                fStruct += (c.taxedStructural * fatigueTuning.struct.partition * ((168 * Math.LN2) / c.hlFastStruct)) * Math.pow(0.5, diffHours / c.hlFastStruct);
+                sStruct += (c.taxedStructural * (1 - fatigueTuning.struct.partition) * ((168 * Math.LN2) / c.hlSlowStruct)) * Math.pow(0.5, diffHours / c.hlSlowStruct);
+            });
+        });
+
+        let totalBase = 0, totalTaxed = 0;
+        let annotatedClimbs = [];
+
+        (sess.climbs || []).forEach(climb => {
+            const metF = getFatiguePct(fMeta, sMeta, wChronMet);
+            const neuroF = getFatiguePct(fNeuro, sNeuro, wChronNeuro);
+            const structF = getFatiguePct(fStruct, sStruct, wChronStruct);
+
+            let rMet = Math.max(5, Math.round(100 - metF.totalPct));
+            let rNeuro = Math.max(5, Math.round(100 - neuroF.totalPct));
+            let rStruct = Math.max(5, Math.round(100 - structF.totalPct));
+
+            let taxMet = 1.0, taxNeuro = 1.0, taxStruct = 1.0;
+            if (engineConfig.fatigueTax) {
+                if (rMet < 30) taxMet = engineConfig.taxThreshold30;
+                else if (rMet < 50) taxMet = engineConfig.taxThreshold50;
+
+                if (rNeuro < 30) taxNeuro = engineConfig.taxThreshold30;
+                else if (rNeuro < 50) taxNeuro = engineConfig.taxThreshold50;
+
+                if (rStruct < 30) taxStruct = engineConfig.taxThreshold30;
+                else if (rStruct < 50) taxStruct = engineConfig.taxThreshold50;
+
+                if (engineConfig.neuroStructLink && rNeuro < 40) taxStruct *= 1.2;
+            }
+
+            let mHlSlow = 1.0;
+            let mHlFastMeta = 1.0;
+            if (engineConfig.dynamicHalfLives) {
+                let rpe = climb.rpe || 1.0;
+                let rpeVal = 6;
+                if (rpe >= 1.6) rpeVal = 9;
+                else if (rpe >= 1.4) rpeVal = 8;
+                else if (rpe >= 1.2) rpeVal = 7;
+                else if (rpe <= 0.8) rpeVal = 5;
+
+                if (rpeVal > 8) mHlSlow = engineConfig.hlMultRPE8 + (engineConfig.hlMultRPE9 - engineConfig.hlMultRPE8) * Math.min(1, rpeVal - 8);
+                else if (rpeVal > 7) mHlSlow = 1.0 + (engineConfig.hlMultRPE8 - 1.0) * (rpeVal - 7);
+
+                if (engineConfig.metaFastScaling && rpeVal >= 8 && climb.metabolic > 15) mHlFastMeta = 1.2;
+            }
+
+            let cTaxedMet = (climb.metabolic || 0) * taxMet;
+            let cTaxedNeuro = (climb.neuro || 0) * taxNeuro;
+            let cTaxedStruct = (climb.structural || 0) * taxStruct;
+
+            totalBase += climb.load || 0;
+            let avgTax = (taxMet + taxNeuro + taxStruct) / 3;
+            totalTaxed += (climb.load || 0) * avgTax;
+
+            let hlFastMeta = fatigueTuning.meta.fastHL * mHlFastMeta;
+            let hlSlowMeta = fatigueTuning.meta.slowHL * mHlSlow;
+            let hlFastNeuro = fatigueTuning.neuro.fastHL;
+            let hlSlowNeuro = fatigueTuning.neuro.slowHL * mHlSlow;
+            let hlFastStruct = fatigueTuning.struct.fastHL;
+            let hlSlowStruct = fatigueTuning.struct.slowHL * mHlSlow;
+
+            let cAnn = {
+                ...climb, taxedMetabolic: cTaxedMet, taxedNeuro: cTaxedNeuro, taxedStructural: cTaxedStruct,
+                hlFastMeta, hlSlowMeta, hlFastNeuro, hlSlowNeuro, hlFastStruct, hlSlowStruct
+            };
+            annotatedClimbs.push(cAnn);
+
+            fMeta += (cTaxedMet * fatigueTuning.meta.partition * ((168 * Math.LN2) / hlFastMeta));
+            sMeta += (cTaxedMet * (1 - fatigueTuning.meta.partition) * ((168 * Math.LN2) / hlSlowMeta));
+            fNeuro += (cTaxedNeuro * fatigueTuning.neuro.partition * ((168 * Math.LN2) / hlFastNeuro));
+            sNeuro += (cTaxedNeuro * (1 - fatigueTuning.neuro.partition) * ((168 * Math.LN2) / hlSlowNeuro));
+            fStruct += (cTaxedStruct * fatigueTuning.struct.partition * ((168 * Math.LN2) / hlFastStruct));
+            sStruct += (cTaxedStruct * (1 - fatigueTuning.struct.partition) * ((168 * Math.LN2) / hlSlowStruct));
+        });
+
+        let quality = 100;
+        if (totalTaxed > 0 && totalBase > 0) quality = Math.min(100, Math.round((totalBase / totalTaxed) * 100));
+
+        sess.annotatedClimbs = annotatedClimbs;
+        sess.trainingQuality = quality;
+
+        processed.push({ time: sessTime, climbs: annotatedClimbs });
+    });
+}
+
 function updateReadinessGauges() {
     const container = document.getElementById('readiness-gauges');
     if (!container) return;
@@ -2384,56 +2582,51 @@ function updateReadinessGauges() {
     const now = new Date();
     const chronicStart = new Date(now);
     chronicStart.setDate(now.getDate() - chronicWindowDays);
-    
+
     const sixHoursAgoGauges = new Date(now.getTime() - 6 * 3600 * 1000);
-    // Expand fatigue window to at least 60 days OR 2x the chronic window
-    // to ensure we capture all residual "Slow Track" decay.
     const fatigueWindowDays = Math.max(60, chronicWindowDays * 2);
     const fatigueStart = new Date(now);
     fatigueStart.setDate(now.getDate() - fatigueWindowDays);
 
     let chronStruct = 0, chronNeuro = 0, chronMet = 0;
-    
-    // Accumulators for Bi-Exponential tracks
-    let fMeta = 0, sMeta = 0;
-    let fNeuro = 0, sNeuro = 0;
-    let fStruct = 0, sStruct = 0;
+    let fMeta = 0, sMeta = 0, fNeuro = 0, sNeuro = 0, fStruct = 0, sStruct = 0;
 
     allSessions.forEach(s => {
         const d = parseLocalDate(s.date);
-        const ch = getSessionChannels(s);
 
-        // Chronic Capacity (6-hour adaptation delay)
         if (d >= chronicStart) {
             const sessTimeChronic = s.createdAt ? new Date(s.createdAt) : d;
             if (sessTimeChronic <= sixHoursAgoGauges) {
-                chronStruct += ch.structural;
-                chronNeuro += ch.neuro;
-                chronMet += ch.metabolic;
+                (s.climbs || []).forEach(c => {
+                    chronStruct += c.structural || 0;
+                    chronNeuro += c.neuro || 0;
+                    chronMet += c.metabolic || 0;
+                });
+                if (engineConfig.chronicCompensation && s.annotatedClimbs) {
+                    s.annotatedClimbs.forEach(c => {
+                        chronStruct += ((c.taxedStructural || c.structural) - (c.structural || 0)) * engineConfig.chronicAbsorption;
+                        chronNeuro += ((c.taxedNeuro || c.neuro) - (c.neuro || 0)) * engineConfig.chronicAbsorption;
+                        chronMet += ((c.taxedMetabolic || c.metabolic) - (c.metabolic || 0)) * engineConfig.chronicAbsorption;
+                    });
+                }
             }
         }
 
-        // Fatigue Decay
         if (d >= fatigueStart) {
             let sessTime = s.createdAt ? new Date(s.createdAt) : parseLocalDate(s.date);
             if (!s.createdAt) sessTime.setHours(12, 0, 0, 0);
-
             const diffHours = Math.max(0, (now - sessTime) / (1000 * 3600));
-            
-            // Apply Bi-Exponential decay using fatigueTuning
-            const decay = (val, hl) => val * Math.pow(0.5, diffHours / hl);
 
-            // Metabolic
-            fMeta += decay(ch.metabolic * fatigueTuning.meta.partition, fatigueTuning.meta.fastHL);
-            sMeta += decay(ch.metabolic * (1 - fatigueTuning.meta.partition), fatigueTuning.meta.slowHL);
-
-            // Neuro
-            fNeuro += decay(ch.neuro * fatigueTuning.neuro.partition, fatigueTuning.neuro.fastHL);
-            sNeuro += decay(ch.neuro * (1 - fatigueTuning.neuro.partition), fatigueTuning.neuro.slowHL);
-
-            // Structural
-            fStruct += decay(ch.structural * fatigueTuning.struct.partition, fatigueTuning.struct.fastHL);
-            sStruct += decay(ch.structural * (1 - fatigueTuning.struct.partition), fatigueTuning.struct.slowHL);
+            if (s.annotatedClimbs) {
+                s.annotatedClimbs.forEach(c => {
+                    fMeta += (c.taxedMetabolic * fatigueTuning.meta.partition * ((168 * Math.LN2) / c.hlFastMeta)) * Math.pow(0.5, diffHours / c.hlFastMeta);
+                    sMeta += (c.taxedMetabolic * (1 - fatigueTuning.meta.partition) * ((168 * Math.LN2) / c.hlSlowMeta)) * Math.pow(0.5, diffHours / c.hlSlowMeta);
+                    fNeuro += (c.taxedNeuro * fatigueTuning.neuro.partition * ((168 * Math.LN2) / c.hlFastNeuro)) * Math.pow(0.5, diffHours / c.hlFastNeuro);
+                    sNeuro += (c.taxedNeuro * (1 - fatigueTuning.neuro.partition) * ((168 * Math.LN2) / c.hlSlowNeuro)) * Math.pow(0.5, diffHours / c.hlSlowNeuro);
+                    fStruct += (c.taxedStructural * fatigueTuning.struct.partition * ((168 * Math.LN2) / c.hlFastStruct)) * Math.pow(0.5, diffHours / c.hlFastStruct);
+                    sStruct += (c.taxedStructural * (1 - fatigueTuning.struct.partition) * ((168 * Math.LN2) / c.hlSlowStruct)) * Math.pow(0.5, diffHours / c.hlSlowStruct);
+                });
+            }
         }
     });
 
@@ -2442,19 +2635,11 @@ function updateReadinessGauges() {
     const wChronNeuro = Math.max(1, chronNeuro / weeksInChronic);
     const wChronMet = Math.max(1, chronMet / weeksInChronic);
 
-    // Calculate percentage of capacity used, dynamically scaling to prevent overflow.
-    // We normalize the exponentially decayed sum into a "Weekly Equivalent Load"
-    // by multiplying by (168 * ln(2) / HL). We then scale by 50 (not 100) because
-    // at steady-state (training exactly at chronic rate), total fatigue should equal
-    // 50%, yielding 50% readiness — the correct equilibrium point.
-    const getFatiguePct = (f, fHL, s, sHL, chronic) => {
-        const normFactor = hl => (168 * Math.LN2) / hl;
-        let fPct = ((f * normFactor(fHL)) / chronic) * 50;
-        let sPct = ((s * normFactor(sHL)) / chronic) * 50;
+    const getFatiguePct = (f, s, chronic) => {
+        let fPct = (f / chronic) * 50;
+        let sPct = (s / chronic) * 50;
         let total = fPct + sPct;
-        
         if (total > 95) {
-            // Scale them down so total fatigue doesn't exceed 95% (ensuring at least 5% readiness)
             const scale = 95 / total;
             fPct *= scale;
             sPct *= scale;
@@ -2462,9 +2647,9 @@ function updateReadinessGauges() {
         return { fPct, sPct, totalPct: fPct + sPct };
     };
 
-    const structF = getFatiguePct(fStruct, fatigueTuning.struct.fastHL, sStruct, fatigueTuning.struct.slowHL, wChronStruct);
-    const neuroF = getFatiguePct(fNeuro, fatigueTuning.neuro.fastHL, sNeuro, fatigueTuning.neuro.slowHL, wChronNeuro);
-    const metF = getFatiguePct(fMeta, fatigueTuning.meta.fastHL, sMeta, fatigueTuning.meta.slowHL, wChronMet);
+    const structF = getFatiguePct(fStruct, sStruct, wChronStruct);
+    const neuroF = getFatiguePct(fNeuro, sNeuro, wChronNeuro);
+    const metF = getFatiguePct(fMeta, sMeta, wChronMet);
 
     const readyStruct = Math.max(5, Math.round(100 - structF.totalPct));
     const readyNeuro = Math.max(5, Math.round(100 - neuroF.totalPct));
@@ -2480,7 +2665,7 @@ function updateReadinessGauges() {
     const renderGauge = (label, ready, fast, slow, type) => {
         const color = getBarColor(ready, type);
         const separator = `border-right: 1px solid var(--bg-card);`;
-        
+
         return `
         <div style="margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 6px; font-weight: 700; color: var(--text-primary);">
@@ -2496,7 +2681,7 @@ function updateReadinessGauges() {
     `;
     };
 
-    container.innerHTML = 
+    container.innerHTML =
         renderGauge('Structural (Tissues)', readyStruct, structF.fPct, structF.sPct, 'struct') +
         renderGauge('Neuromuscular (Power)', readyNeuro, neuroF.fPct, neuroF.sPct, 'neuro') +
         renderGauge('Metabolic (Pump)', readyMet, metF.fPct, metF.sPct, 'met');
@@ -2541,9 +2726,9 @@ function drawIntensityChart(sessions, days) {
         const px = padL + ((p.date - start) / timeSpan) * (W - padL - padR);
         const py = H - padB - (p.intensity / maxI) * (H - padT - padB);
         if (idx === 0) { ctx.moveTo(px, py); } else { ctx.lineTo(px, py); }
-        
+
         ctx.beginPath();
-        ctx.arc(px, py, 3, 0, 2*Math.PI);
+        ctx.arc(px, py, 3, 0, 2 * Math.PI);
         ctx.fill();
         ctx.stroke();
         ctx.beginPath();
@@ -2585,7 +2770,7 @@ function drawCorrelatorChart(sessions, days) {
         ctx.fillStyle = 'rgba(255,255,255,0.3)';
         ctx.font = '14px Inter';
         ctx.textAlign = 'center';
-        ctx.fillText('Log Font grades (e.g. 6c, 7a+) to see correlation.', W/2, H/2);
+        ctx.fillText('Log Font grades (e.g. 6c, 7a+) to see correlation.', W / 2, H / 2);
         return;
     }
 
@@ -2600,15 +2785,15 @@ function drawCorrelatorChart(sessions, days) {
         const px = padL + ((p.date - start) / timeSpan) * (W - padL - padR);
         const py = H - padB - (p.score / (maxScore + 2)) * (H - padT - padB);
         if (idx === 0) { ctx.moveTo(px, py); } else { ctx.lineTo(px, py); }
-        
+
         ctx.fillStyle = '#22c55e';
-        ctx.beginPath(); ctx.arc(px, py, 4, 0, 2*Math.PI); ctx.fill();
-        
+        ctx.beginPath(); ctx.arc(px, py, 4, 0, 2 * Math.PI); ctx.fill();
+
         ctx.fillStyle = '#fff';
         ctx.font = '10px Inter';
         ctx.textAlign = 'center';
         ctx.fillText(getFontGradeLabel(p.score), px, py - 10);
-        
+
         ctx.beginPath(); ctx.moveTo(px, py);
     });
     ctx.stroke();
@@ -2617,7 +2802,7 @@ function drawCorrelatorChart(sessions, days) {
 function updateCoachInsight(sessions) {
     const textEl = document.getElementById('analytics-insight-text');
     if (!textEl) return;
-    
+
     if (sessions.length < 3) {
         textEl.textContent = "Log more sessions to generate advanced insights about your training phases.";
         return;
@@ -2627,9 +2812,9 @@ function updateCoachInsight(sessions) {
     const now = new Date();
     const fourteenAgo = new Date(now);
     fourteenAgo.setDate(now.getDate() - 14);
-    
+
     let lowVel = 0, highVel = 0, met = 0;
-    
+
     sessions.filter(s => parseLocalDate(s.date) >= fourteenAgo).forEach(s => {
         s.climbs.forEach(c => {
             const p = parseFloat(c.power) || 1.0;
@@ -2640,7 +2825,7 @@ function updateCoachInsight(sessions) {
     });
 
     let insight = "";
-    
+
     if (lowVel > highVel * 1.5) {
         insight = "You are currently in a Tissue Prep phase (Low Velocity dominant). Continue building structural capacity before transitioning to power.";
     } else if (highVel > lowVel * 1.5) {
@@ -2648,11 +2833,11 @@ function updateCoachInsight(sessions) {
     } else {
         insight = "Your recent training has a balanced mix of velocities. To drive specific adaptations, consider polarizing into a dedicated Tissue Prep or Power block.";
     }
-    
+
     if (met > (lowVel + highVel) * 0.5) {
         insight += " Warning: High metabolic load detected. Heavy pump/acidosis will blunt your neurological power gains. Reduce pump if your goal is max bouldering strength.";
     }
-    
+
     // Check correlation
     let maxScore = 0, bestSession = null;
     sessions.forEach(s => {
@@ -2661,7 +2846,7 @@ function updateCoachInsight(sessions) {
             if (sc > maxScore) { maxScore = sc; bestSession = s; }
         });
     });
-    
+
     if (bestSession && maxScore > 2) {
         insight += ` You sent your hardest grade (${getFontGradeLabel(maxScore)}) on ${parseLocalDate(bestSession.date).toLocaleDateString()}. `;
     }
@@ -2686,21 +2871,21 @@ function updateCoachInsight(sessions) {
             const sendDate = parseLocalDate(ps.session.date);
             const sevenDaysPrior = new Date(sendDate);
             sevenDaysPrior.setDate(sendDate.getDate() - 7);
-            
+
             const priorAcuteLoad = allSessions
                 .filter(s => {
                     const d = parseLocalDate(s.date);
                     return d >= sevenDaysPrior && d < sendDate;
                 })
                 .reduce((sum, s) => sum + s.totalLoad, 0);
-            
+
             acuteLoads.push(priorAcuteLoad);
         });
-        
+
         const avgAcute = acuteLoads.reduce((a, b) => a + b, 0) / acuteLoads.length;
         insight += `\n\nYour Peak Sending Sweet Spot: Your hardest grades were sent when your prior 7-day Acute Load averaged roughly ${Math.round(avgAcute)} CLU.`;
     }
-    
+
     textEl.textContent = insight;
 }
 
@@ -2712,29 +2897,29 @@ function updateCoachInsight(sessions) {
 document.getElementById('import-file').addEventListener('change', async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    
+
     if (!currentUser) {
         showToast('Please sign in first.');
         return;
     }
-    
+
     try {
         const text = await file.text();
         const sessions = JSON.parse(text);
-        
+
         if (!Array.isArray(sessions)) {
             showToast('Invalid format: expected an array of sessions.');
             return;
         }
-        
+
         const confirmed = confirm(`Import ${sessions.length} sessions? This will ADD them to your existing data.`);
         if (!confirmed) return;
-        
+
         let imported = 0;
         for (const sess of sessions) {
             // Validate minimum fields
             if (!sess.date || !sess.climbs || !Array.isArray(sess.climbs)) continue;
-            
+
             // Recalculate totals from climbs
             let totalLoad = 0, totalNeuro = 0, totalMetabolic = 0, totalStructural = 0;
             sess.climbs.forEach(c => {
@@ -2743,7 +2928,7 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
                 totalMetabolic += (c.metabolic || 0);
                 totalStructural += (c.structural || 0);
             });
-            
+
             const sessionDoc = {
                 date: sess.date,
                 name: sess.name || 'Imported Session',
@@ -2756,12 +2941,12 @@ document.getElementById('import-file').addEventListener('change', async (e) => {
                 totalStructural,
                 createdAt: sess.createdAt || new Date().toISOString()
             };
-            
+
             const id = sess.id || (Date.now().toString(36) + Math.random().toString(36).slice(2, 6) + imported);
             await setDoc(doc(db, `users/${currentUser.uid}/sessions`, id), sessionDoc);
             imported++;
         }
-        
+
         showToast(`Imported ${imported} sessions successfully!`);
         e.target.value = ''; // Reset file input
     } catch (err) {
@@ -2810,16 +2995,16 @@ $('#setting-chronic-window').addEventListener('change', (e) => {
 });
 
 // Wipe Data
-window.handleWipeData = async function() {
+window.handleWipeData = async function () {
     if (!currentUser) return;
     const confirmText = "DELETE ALL DATA";
     const promptValue = prompt(`This will permanently delete ALL training sessions and settings. This action is IRREVERSIBLE.\n\nPlease type "${confirmText}" to confirm:`);
-    
+
     if (promptValue !== confirmText) {
         showToast("Wipe cancelled.");
         return;
     }
-    
+
     showToast("Starting wipe...");
     try {
         // Delete sessions
@@ -2828,7 +3013,7 @@ window.handleWipeData = async function() {
         }
         // Delete settings
         await deleteDoc(doc(db, `users/${currentUser.uid}/settings`, 'preferences'));
-        
+
         showToast("All data wiped successfully.");
         switchToView('dashboard');
     } catch (err) {
@@ -2966,7 +3151,7 @@ function syncWidgetToggles() {
     $('#w-show-correlator').checked = widgetVisibility.correlator;
 }
 
-window.updateWidgetVisibility = function(key, isVisible) {
+window.updateWidgetVisibility = function (key, isVisible) {
     widgetVisibility[key] = isVisible;
     updatePreference('widgetVisibility', widgetVisibility);
     applyWidgetVisibility();
@@ -3004,14 +3189,14 @@ function applyAccentColor(theme) {
     root.style.setProperty('--orange-400', colors.main);
     root.style.setProperty('--orange-500', colors.main);
     root.style.setProperty('--orange-600', colors.hover);
-    
+
     // Update active state on color buttons
     $$('.color-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.theme === theme);
     });
 }
 
-window.resetSettingsTab = function(tabId) {
+window.resetSettingsTab = function (tabId) {
     if (!confirm(`Reset all ${tabId} settings to defaults?`)) return;
 
     if (tabId === 'general') {
@@ -3048,6 +3233,13 @@ window.resetSettingsTab = function(tabId) {
             struct: { partition: 0.5, fastHL: 36, slowHL: 336 }
         };
         updatePreference('fatigueTuning', fatigueTuning);
+    } else if (tabId === 'engine') {
+        engineConfig = {
+            dynamicHalfLives: true, fatigueTax: true, metaFastScaling: true,
+            neuroStructLink: true, chronicCompensation: true,
+            hlMultRPE8: 1.2, hlMultRPE9: 1.5, taxThreshold50: 1.15, taxThreshold30: 1.30, chronicAbsorption: 0.20
+        };
+        updatePreference('engineConfig', engineConfig);
     }
 
     // Force immediate UI update
@@ -3056,7 +3248,7 @@ window.resetSettingsTab = function(tabId) {
     syncWidgetToggles();
     applyWidgetVisibility();
     applyAccentColor(themeColor);
-    
+
     // Fatigue Tuning UI sync
     ['meta', 'neuro', 'struct'].forEach(ch => {
         const part = document.getElementById(`tuning-${ch}-partition`);
@@ -3133,4 +3325,56 @@ $('#theme-color-presets').addEventListener('click', (e) => {
 // Default Preset
 $('#setting-default-preset').addEventListener('change', (e) => {
     updatePreference('defaultLogPreset', e.target.value);
+});
+
+// Engine Config Listeners
+window.syncEngineUI = function () {
+    const hlEnabled = $('#eng-toggle-hl') ? $('#eng-toggle-hl').checked : true;
+    const taxEnabled = $('#eng-toggle-tax') ? $('#eng-toggle-tax').checked : true;
+
+    $$('.eng-hl-group').forEach(el => el.style.opacity = hlEnabled ? '1' : '0.4');
+    $$('.eng-tax-group').forEach(el => el.style.opacity = taxEnabled ? '1' : '0.4');
+
+    $$('.eng-hl-group input').forEach(el => el.disabled = !hlEnabled);
+    $$('.eng-tax-group input').forEach(el => el.disabled = !taxEnabled);
+};
+
+const engToggles = ['eng-toggle-hl', 'eng-toggle-tax', 'eng-meta-fast', 'eng-neuro-struct', 'eng-chronic-comp'];
+engToggles.forEach(id => {
+    const el = document.getElementById(id);
+    if (el) {
+        el.addEventListener('change', (e) => {
+            const key = {
+                'eng-toggle-hl': 'dynamicHalfLives',
+                'eng-toggle-tax': 'fatigueTax',
+                'eng-meta-fast': 'metaFastScaling',
+                'eng-neuro-struct': 'neuroStructLink',
+                'eng-chronic-comp': 'chronicCompensation'
+            }[id];
+            engineConfig[key] = e.target.checked;
+            updatePreference('engineConfig', engineConfig);
+            if (id === 'eng-toggle-hl' || id === 'eng-toggle-tax') syncEngineUI();
+            refreshDashboard();
+        });
+    }
+});
+
+const engInputs = [
+    { id: 'eng-hl-8', key: 'hlMultRPE8', isPct: false },
+    { id: 'eng-hl-9', key: 'hlMultRPE9', isPct: false },
+    { id: 'eng-tax-50', key: 'taxThreshold50', isPct: false },
+    { id: 'eng-tax-30', key: 'taxThreshold30', isPct: false },
+    { id: 'eng-absorb', key: 'chronicAbsorption', isPct: true }
+];
+engInputs.forEach(input => {
+    const el = document.getElementById(input.id);
+    if (el) {
+        el.addEventListener('change', (e) => {
+            let val = parseFloat(e.target.value) || 0;
+            if (input.isPct) val = val / 100;
+            engineConfig[input.key] = val;
+            updatePreference('engineConfig', engineConfig);
+            refreshDashboard();
+        });
+    }
 });

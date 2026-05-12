@@ -2569,7 +2569,7 @@ function evaluateEngine(sessions) {
         if (totalTaxed > 0 && totalBase > 0) quality = Math.min(100, Math.round((totalBase / totalTaxed) * 100));
 
         sess.annotatedClimbs = annotatedClimbs;
-        sess.trainingQuality = quality;
+        sess.trainingQuality = engineConfig.fatigueTax ? quality : undefined;
 
         processed.push({ time: sessTime, climbs: annotatedClimbs });
     });

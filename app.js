@@ -69,7 +69,11 @@ let engineConfig = {
     hlMultRPE9: 1.5,
     taxThreshold50: 1.15,
     taxThreshold30: 1.30,
-    chronicAbsorption: 0.20
+    chronicAbsorption: 0.20,
+    metaFastThreshold: 15,
+    metaFastMultiplier: 1.2,
+    neuroStructThreshold: 40,
+    neuroStructMultiplier: 1.2
 };
 
 // ---- Legacy Mapping (for retroactive multiplier support) ----
@@ -198,6 +202,14 @@ onAuthStateChanged(auth, (user) => {
                 if (engTax30) engTax30.value = engineConfig.taxThreshold30;
                 const engAbsorb = document.getElementById('eng-absorb');
                 if (engAbsorb) engAbsorb.value = engineConfig.chronicAbsorption * 100;
+                const engMetaThresh = document.getElementById('eng-meta-fast-thresh');
+                if (engMetaThresh) engMetaThresh.value = engineConfig.metaFastThreshold;
+                const engMetaMult = document.getElementById('eng-meta-fast-mult');
+                if (engMetaMult) engMetaMult.value = engineConfig.metaFastMultiplier;
+                const engNsThresh = document.getElementById('eng-ns-thresh');
+                if (engNsThresh) engNsThresh.value = engineConfig.neuroStructThreshold;
+                const engNsMult = document.getElementById('eng-ns-mult');
+                if (engNsMult) engNsMult.value = engineConfig.neuroStructMultiplier;
 
                 if (typeof syncEngineUI === 'function') syncEngineUI();
 
@@ -243,7 +255,8 @@ onAuthStateChanged(auth, (user) => {
                 engineConfig = {
                     dynamicHalfLives: true, fatigueTax: true, metaFastScaling: true,
                     neuroStructLink: true, chronicCompensation: true,
-                    hlMultRPE8: 1.2, hlMultRPE9: 1.5, taxThreshold50: 1.15, taxThreshold30: 1.30, chronicAbsorption: 0.20
+                    hlMultRPE8: 1.2, hlMultRPE9: 1.5, taxThreshold50: 1.15, taxThreshold30: 1.30, chronicAbsorption: 0.20,
+                    metaFastThreshold: 15, metaFastMultiplier: 1.2, neuroStructThreshold: 40, neuroStructMultiplier: 1.2
                 };
             }
             refreshDashboard();
@@ -2517,7 +2530,7 @@ function evaluateEngine(sessions) {
                 if (rStruct < 30) taxStruct = engineConfig.taxThreshold30;
                 else if (rStruct < 50) taxStruct = engineConfig.taxThreshold50;
 
-                if (engineConfig.neuroStructLink && rNeuro < 40) taxStruct *= 1.2;
+                if (engineConfig.neuroStructLink && rNeuro < engineConfig.neuroStructThreshold) taxStruct *= engineConfig.neuroStructMultiplier;
             }
 
             let mHlSlow = 1.0;
@@ -2533,7 +2546,7 @@ function evaluateEngine(sessions) {
                 if (rpeVal > 8) mHlSlow = engineConfig.hlMultRPE8 + (engineConfig.hlMultRPE9 - engineConfig.hlMultRPE8) * Math.min(1, rpeVal - 8);
                 else if (rpeVal > 7) mHlSlow = 1.0 + (engineConfig.hlMultRPE8 - 1.0) * (rpeVal - 7);
 
-                if (engineConfig.metaFastScaling && rpeVal >= 8 && climb.metabolic > 15) mHlFastMeta = 1.2;
+                if (engineConfig.metaFastScaling && rpeVal >= 8 && climb.metabolic > engineConfig.metaFastThreshold) mHlFastMeta = engineConfig.metaFastMultiplier;
             }
 
             let cTaxedMet = (climb.metabolic || 0) * taxMet;
@@ -3237,7 +3250,8 @@ window.resetSettingsTab = function (tabId) {
         engineConfig = {
             dynamicHalfLives: true, fatigueTax: true, metaFastScaling: true,
             neuroStructLink: true, chronicCompensation: true,
-            hlMultRPE8: 1.2, hlMultRPE9: 1.5, taxThreshold50: 1.15, taxThreshold30: 1.30, chronicAbsorption: 0.20
+            hlMultRPE8: 1.2, hlMultRPE9: 1.5, taxThreshold50: 1.15, taxThreshold30: 1.30, chronicAbsorption: 0.20,
+            metaFastThreshold: 15, metaFastMultiplier: 1.2, neuroStructThreshold: 40, neuroStructMultiplier: 1.2
         };
         updatePreference('engineConfig', engineConfig);
     }
@@ -3364,7 +3378,11 @@ const engInputs = [
     { id: 'eng-hl-9', key: 'hlMultRPE9', isPct: false },
     { id: 'eng-tax-50', key: 'taxThreshold50', isPct: false },
     { id: 'eng-tax-30', key: 'taxThreshold30', isPct: false },
-    { id: 'eng-absorb', key: 'chronicAbsorption', isPct: true }
+    { id: 'eng-absorb', key: 'chronicAbsorption', isPct: true },
+    { id: 'eng-meta-fast-thresh', key: 'metaFastThreshold', isPct: false },
+    { id: 'eng-meta-fast-mult', key: 'metaFastMultiplier', isPct: false },
+    { id: 'eng-ns-thresh', key: 'neuroStructThreshold', isPct: false },
+    { id: 'eng-ns-mult', key: 'neuroStructMultiplier', isPct: false }
 ];
 engInputs.forEach(input => {
     const el = document.getElementById(input.id);

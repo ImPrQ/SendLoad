@@ -93,7 +93,14 @@
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></svg>
                     </button>
                 </div>
-                <span style="font-size: 0.8rem; color: var(--text-muted);">Real-time Fatigue Decay</span>
+                <div style="display: flex; align-items: center; gap: 8px;">
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Readiness</span>
+                    <label class="switch small" style="margin: 0;">
+                        <input type="checkbox" id="readiness-view-toggle" onchange="updateReadinessGauges()">
+                        <span class="slider"></span>
+                    </label>
+                    <span style="font-size: 0.75rem; color: var(--text-muted);">Fatigue</span>
+                </div>
             </div>
             <div id="readiness-gauges"></div>
         </div>
@@ -1101,13 +1108,14 @@
                     <div style="background: var(--bg-hover); padding: 12px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 12px; color: var(--text-main);">
                         DecayedLoad = Σ ( SessionLoad × 0.5<sup>(Δt / HalfLife)</sup> )
                     </div>
-                    <p style="margin-bottom: 8px;">To compare this exponential sum to your 28-day Chronic Weekly Capacity (<em>W</em>), we normalize it into a "Weekly Equivalent Load" by multiplying by a factor that calculates the area under the exponential decay curve:</p>
+                    <p style="margin-bottom: 8px;">To compare this exponential sum to your 28-day Chronic Weekly Capacity (<em>W</em>), we normalize it using a <strong>discrete-session factor</strong>. This factor accounts for how many sessions per week (<em>N</em>) you typically train, converting the decayed sum into a "per-session equivalent":</p>
                     <div style="background: var(--bg-hover); padding: 12px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 0.8rem; margin-bottom: 12px; color: var(--text-main);">
-                        NormalizedLoad = DecayedLoad × (168 × ln(2) / HalfLife)<br><br>
+                        NormFactor = 1 - 0.5<sup>(168 / (N × HalfLife))</sup><br><br>
+                        NormalizedLoad = DecayedLoad × NormFactor<br><br>
                         Fatigue % = (NormalizedLoad / W) × 50<br><br>
                         Readiness = 100% - Total Fatigue %
                     </div>
-                    <p><em>Note: We scale the percentage by 50 so that at steady-state (training exactly at your chronic average), your readiness rests in a state of equilibrium at 50%, reflecting a productive state of physiological adaptation rather than being completely drained.</em></p>
+                    <p><em>Note: We scale the percentage by 50 so that at steady-state (training at your chronic average frequency), your readiness rests in equilibrium at 50%, reflecting a productive state of adaptation rather than being completely drained.</em></p>
                     
                     <h3 style="font-size: 0.9rem; margin: 16px 0 8px;">Partitioning & Example</h3>
                     <p style="margin-bottom: 8px;">Different physiological stresses leave different long-term traces. When a climb generates CLU, that load is distributed into the fast/slow tracks based on its category:</p>

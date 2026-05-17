@@ -2443,6 +2443,12 @@ function drawIntensityHistogram() {
     });
 }
 
+// Discrete-session normalization: replaces continuous (168*ln2/τ) with geometric-series factor
+function discreteNorm(halfLife, sessionsPerWeek) {
+    const N = Math.max(1, sessionsPerWeek);
+    return 1 - Math.pow(0.5, 168 / (N * halfLife));
+}
+
 function evaluateEngine(sessions) {
     let sorted = [...sessions].sort((a, b) => {
         let ta = a.createdAt ? new Date(a.createdAt) : parseLocalDate(a.date);
@@ -2470,9 +2476,11 @@ function evaluateEngine(sessions) {
         let chronWindowStart = new Date(sessTime);
         chronWindowStart.setDate(sessTime.getDate() - chronicWindowDays);
         let chronStruct = 0, chronNeuro = 0, chronMet = 0;
+        let sessionsInWindow = 0;
 
         processed.forEach(pSess => {
             if (pSess.time >= chronWindowStart && pSess.time < sessTime) {
+                sessionsInWindow++;
                 pSess.climbs.forEach(c => {
                     chronStruct += c.structural || 0;
                     chronNeuro += c.neuro || 0;
@@ -2492,18 +2500,19 @@ function evaluateEngine(sessions) {
         const wChronStruct = Math.max(1, chronStruct / weeksInChronic);
         const wChronNeuro = Math.max(1, chronNeuro / weeksInChronic);
         const wChronMet = Math.max(1, chronMet / weeksInChronic);
+        const sessPerWeek = Math.max(2, sessionsInWindow / weeksInChronic);
 
         let fMeta = 0, sMeta = 0, fNeuro = 0, sNeuro = 0, fStruct = 0, sStruct = 0;
 
         processed.forEach(pSess => {
             const diffHours = Math.max(0, (sessTime - pSess.time) / (1000 * 3600));
             pSess.climbs.forEach(c => {
-                fMeta += (c.taxedMetabolic * fatigueTuning.meta.partition * ((168 * Math.LN2) / c.hlFastMeta)) * Math.pow(0.5, diffHours / c.hlFastMeta);
-                sMeta += (c.taxedMetabolic * (1 - fatigueTuning.meta.partition) * ((168 * Math.LN2) / c.hlSlowMeta)) * Math.pow(0.5, diffHours / c.hlSlowMeta);
-                fNeuro += (c.taxedNeuro * fatigueTuning.neuro.partition * ((168 * Math.LN2) / c.hlFastNeuro)) * Math.pow(0.5, diffHours / c.hlFastNeuro);
-                sNeuro += (c.taxedNeuro * (1 - fatigueTuning.neuro.partition) * ((168 * Math.LN2) / c.hlSlowNeuro)) * Math.pow(0.5, diffHours / c.hlSlowNeuro);
-                fStruct += (c.taxedStructural * fatigueTuning.struct.partition * ((168 * Math.LN2) / c.hlFastStruct)) * Math.pow(0.5, diffHours / c.hlFastStruct);
-                sStruct += (c.taxedStructural * (1 - fatigueTuning.struct.partition) * ((168 * Math.LN2) / c.hlSlowStruct)) * Math.pow(0.5, diffHours / c.hlSlowStruct);
+                fMeta += (c.taxedMetabolic * fatigueTuning.meta.partition * discreteNorm(c.hlFastMeta, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlFastMeta);
+                sMeta += (c.taxedMetabolic * (1 - fatigueTuning.meta.partition) * discreteNorm(c.hlSlowMeta, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlSlowMeta);
+                fNeuro += (c.taxedNeuro * fatigueTuning.neuro.partition * discreteNorm(c.hlFastNeuro, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlFastNeuro);
+                sNeuro += (c.taxedNeuro * (1 - fatigueTuning.neuro.partition) * discreteNorm(c.hlSlowNeuro, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlSlowNeuro);
+                fStruct += (c.taxedStructural * fatigueTuning.struct.partition * discreteNorm(c.hlFastStruct, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlFastStruct);
+                sStruct += (c.taxedStructural * (1 - fatigueTuning.struct.partition) * discreteNorm(c.hlSlowStruct, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlSlowStruct);
             });
         });
 
@@ -2570,12 +2579,12 @@ function evaluateEngine(sessions) {
             };
             annotatedClimbs.push(cAnn);
 
-            fMeta += (cTaxedMet * fatigueTuning.meta.partition * ((168 * Math.LN2) / hlFastMeta));
-            sMeta += (cTaxedMet * (1 - fatigueTuning.meta.partition) * ((168 * Math.LN2) / hlSlowMeta));
-            fNeuro += (cTaxedNeuro * fatigueTuning.neuro.partition * ((168 * Math.LN2) / hlFastNeuro));
-            sNeuro += (cTaxedNeuro * (1 - fatigueTuning.neuro.partition) * ((168 * Math.LN2) / hlSlowNeuro));
-            fStruct += (cTaxedStruct * fatigueTuning.struct.partition * ((168 * Math.LN2) / hlFastStruct));
-            sStruct += (cTaxedStruct * (1 - fatigueTuning.struct.partition) * ((168 * Math.LN2) / hlSlowStruct));
+            fMeta += (cTaxedMet * fatigueTuning.meta.partition * discreteNorm(hlFastMeta, sessPerWeek));
+            sMeta += (cTaxedMet * (1 - fatigueTuning.meta.partition) * discreteNorm(hlSlowMeta, sessPerWeek));
+            fNeuro += (cTaxedNeuro * fatigueTuning.neuro.partition * discreteNorm(hlFastNeuro, sessPerWeek));
+            sNeuro += (cTaxedNeuro * (1 - fatigueTuning.neuro.partition) * discreteNorm(hlSlowNeuro, sessPerWeek));
+            fStruct += (cTaxedStruct * fatigueTuning.struct.partition * discreteNorm(hlFastStruct, sessPerWeek));
+            sStruct += (cTaxedStruct * (1 - fatigueTuning.struct.partition) * discreteNorm(hlSlowStruct, sessPerWeek));
         });
 
         let quality = 100;
@@ -2603,6 +2612,7 @@ function updateReadinessGauges() {
 
     let chronStruct = 0, chronNeuro = 0, chronMet = 0;
     let fMeta = 0, sMeta = 0, fNeuro = 0, sNeuro = 0, fStruct = 0, sStruct = 0;
+    let sessionsInChronic = 0;
 
     allSessions.forEach(s => {
         const d = parseLocalDate(s.date);
@@ -2610,6 +2620,7 @@ function updateReadinessGauges() {
         if (d >= chronicStart) {
             const sessTimeChronic = s.createdAt ? new Date(s.createdAt) : d;
             if (sessTimeChronic <= sixHoursAgoGauges) {
+                sessionsInChronic++;
                 (s.climbs || []).forEach(c => {
                     chronStruct += c.structural || 0;
                     chronNeuro += c.neuro || 0;
@@ -2631,13 +2642,14 @@ function updateReadinessGauges() {
             const diffHours = Math.max(0, (now - sessTime) / (1000 * 3600));
 
             if (s.annotatedClimbs) {
+                const sessPerWeek = Math.max(2, sessionsInChronic / (chronicWindowDays / 7));
                 s.annotatedClimbs.forEach(c => {
-                    fMeta += (c.taxedMetabolic * fatigueTuning.meta.partition * ((168 * Math.LN2) / c.hlFastMeta)) * Math.pow(0.5, diffHours / c.hlFastMeta);
-                    sMeta += (c.taxedMetabolic * (1 - fatigueTuning.meta.partition) * ((168 * Math.LN2) / c.hlSlowMeta)) * Math.pow(0.5, diffHours / c.hlSlowMeta);
-                    fNeuro += (c.taxedNeuro * fatigueTuning.neuro.partition * ((168 * Math.LN2) / c.hlFastNeuro)) * Math.pow(0.5, diffHours / c.hlFastNeuro);
-                    sNeuro += (c.taxedNeuro * (1 - fatigueTuning.neuro.partition) * ((168 * Math.LN2) / c.hlSlowNeuro)) * Math.pow(0.5, diffHours / c.hlSlowNeuro);
-                    fStruct += (c.taxedStructural * fatigueTuning.struct.partition * ((168 * Math.LN2) / c.hlFastStruct)) * Math.pow(0.5, diffHours / c.hlFastStruct);
-                    sStruct += (c.taxedStructural * (1 - fatigueTuning.struct.partition) * ((168 * Math.LN2) / c.hlSlowStruct)) * Math.pow(0.5, diffHours / c.hlSlowStruct);
+                    fMeta += (c.taxedMetabolic * fatigueTuning.meta.partition * discreteNorm(c.hlFastMeta, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlFastMeta);
+                    sMeta += (c.taxedMetabolic * (1 - fatigueTuning.meta.partition) * discreteNorm(c.hlSlowMeta, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlSlowMeta);
+                    fNeuro += (c.taxedNeuro * fatigueTuning.neuro.partition * discreteNorm(c.hlFastNeuro, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlFastNeuro);
+                    sNeuro += (c.taxedNeuro * (1 - fatigueTuning.neuro.partition) * discreteNorm(c.hlSlowNeuro, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlSlowNeuro);
+                    fStruct += (c.taxedStructural * fatigueTuning.struct.partition * discreteNorm(c.hlFastStruct, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlFastStruct);
+                    sStruct += (c.taxedStructural * (1 - fatigueTuning.struct.partition) * discreteNorm(c.hlSlowStruct, sessPerWeek)) * Math.pow(0.5, diffHours / c.hlSlowStruct);
                 });
             }
         }
@@ -2668,36 +2680,45 @@ function updateReadinessGauges() {
     const readyNeuro = Math.max(5, Math.round(100 - neuroF.totalPct));
     const readyMet = Math.max(5, Math.round(100 - metF.totalPct));
 
-    const getBarColor = (val, type) => {
-        if (val < 40) return 'var(--red-500)';
+    // Check toggle state for fatigue vs readiness view
+    const toggleEl = document.getElementById('readiness-view-toggle');
+    const isFatigueView = toggleEl && toggleEl.checked;
+
+    const getBarColor = (readyVal, type) => {
+        if (readyVal < 40) return 'var(--red-500)';
+        if (readyVal < 70) return 'var(--yellow-400)';
         if (type === 'neuro') return 'var(--orange-400)';
         if (type === 'met') return 'var(--blue-400)';
         return 'var(--green-400)';
     };
 
-    const renderGauge = (label, ready, fast, slow, type) => {
+    const renderGauge = (label, ready, fatiguePct, fPct, sPct, type) => {
         const color = getBarColor(ready, type);
         const separator = `border-right: 1px solid var(--bg-card);`;
+        const displayValue = isFatigueView ? `${Math.round(fatiguePct)}% Fatigue` : `${ready}% Readiness`;
+        const acuteTitle = `Acute Fatigue: ${fPct.toFixed(1)}%`;
+        const systemicTitle = `Systemic Fatigue: ${sPct.toFixed(1)}%`;
+        const readyTitle = isFatigueView ? `Recovered: ${ready}%` : `Readiness: ${ready}%`;
 
         return `
         <div style="margin-bottom: 16px;">
             <div style="display: flex; justify-content: space-between; font-size: 0.75rem; margin-bottom: 6px; font-weight: 700; color: var(--text-primary);">
                 <span>${label}</span>
-                <span>${ready}% Readiness</span>
+                <span>${displayValue}</span>
             </div>
             <div style="height: 10px; background: rgba(255,255,255,0.08); border-radius: 5px; overflow: hidden; display: flex;">
-                <div style="height: 100%; width: ${ready}%; background: ${color}; transition: width 0.6s var(--ease-out); ${ready > 0 ? separator : ''}"></div>
-                <div style="height: 100%; width: ${slow}%; background: repeating-linear-gradient(45deg, ${color} 0, ${color} 4px, transparent 4px, transparent 8px); opacity: 0.4; transition: width 0.6s var(--ease-out); ${slow > 0 ? separator : ''}" title="Systemic Fatigue"></div>
-                <div style="height: 100%; width: calc(100% - ${ready}% - ${slow}%); background: ${color}; opacity: 0.35; transition: width 0.6s var(--ease-out);" title="Acute Fatigue"></div>
+                <div style="height: 100%; width: ${ready}%; background: ${color}; transition: width 0.6s var(--ease-out); ${ready > 0 ? separator : ''}" title="${readyTitle}"></div>
+                <div style="height: 100%; width: ${sPct}%; background: repeating-linear-gradient(45deg, ${color} 0, ${color} 4px, transparent 4px, transparent 8px); opacity: 0.4; transition: width 0.6s var(--ease-out); ${sPct > 0 ? separator : ''}" title="${systemicTitle}"></div>
+                <div style="height: 100%; width: ${fPct}%; background: ${color}; opacity: 0.35; transition: width 0.6s var(--ease-out);" title="${acuteTitle}"></div>
             </div>
         </div>
     `;
     };
 
     container.innerHTML =
-        renderGauge('Structural (Tissues)', readyStruct, structF.fPct, structF.sPct, 'struct') +
-        renderGauge('Neuromuscular (Power)', readyNeuro, neuroF.fPct, neuroF.sPct, 'neuro') +
-        renderGauge('Metabolic (Pump)', readyMet, metF.fPct, metF.sPct, 'met');
+        renderGauge('Structural (Tissues)', readyStruct, structF.totalPct, structF.fPct, structF.sPct, 'struct') +
+        renderGauge('Neuromuscular (Power)', readyNeuro, neuroF.totalPct, neuroF.fPct, neuroF.sPct, 'neuro') +
+        renderGauge('Metabolic (Pump)', readyMet, metF.totalPct, metF.fPct, metF.sPct, 'met');
 }
 
 function drawIntensityChart(sessions, days) {
@@ -3169,6 +3190,8 @@ window.updateWidgetVisibility = function (key, isVisible) {
     updatePreference('widgetVisibility', widgetVisibility);
     applyWidgetVisibility();
 };
+
+window.updateReadinessGauges = updateReadinessGauges;
 
 function applyWidgetVisibility() {
     const map = {
